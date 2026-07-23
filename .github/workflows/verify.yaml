@@ -38,15 +38,23 @@ jobs:
         uses: actions/cache@v5
         with:
           path: ~/.nuget/packages
-          key: ${{ runner.os }}-nuget-${{ hashFiles('DotNetFoundations.slnx', '**/*.csproj') }}
+          key: ${{ runner.os }}-nuget-${{ hashFiles('DotNetFoundations.slnx', '**/*.csproj', 'eng/package-families/*.props') }}
 
       - name: Verify source
         run: bash scripts/verify.sh
 
   package:
-    name: package (text-vocabularies)
+    name: package (${{ matrix.family }})
     needs: dotnet
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - family: filesystem
+            version: 0.1.0
+          - family: text-vocabularies
+            version: 0.1.0
 
     steps:
       - name: Checkout
@@ -60,20 +68,20 @@ jobs:
       - name: Pack package family
         run: >-
           bash scripts/pack-package-family.sh
-          --family text-vocabularies
-          --version 0.1.0
+          --family "${{ matrix.family }}"
+          --version "${{ matrix.version }}"
           --output artifacts/packages
 
       - name: Verify package family
         run: >-
           bash scripts/verify-package-family.sh
-          --family text-vocabularies
-          --version 0.1.0
+          --family "${{ matrix.family }}"
+          --version "${{ matrix.version }}"
           --package-dir artifacts/packages
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: text-vocabularies-0.1.0
+          name: ${{ matrix.family }}-${{ matrix.version }}
           path: artifacts/packages/*.nupkg
           if-no-files-found: error

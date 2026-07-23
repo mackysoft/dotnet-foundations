@@ -8,10 +8,17 @@ This repository owns product-independent .NET foundations shared by MackySoft pr
 
 | Family | Package | Version | Responsibility |
 | --- | --- | --- | --- |
+| `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.1.0` | Guarded lexical path values using current-platform identity rules. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies`](src/MackySoft.Text.Vocabularies/README.md) | `0.1.0` | Finite typed vocabularies with exact canonical text mappings. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies.Json`](src/MackySoft.Text.Vocabularies.Json/README.md) | `0.1.0` | `System.Text.Json` string value and property-name adapters. |
 
-The `text-vocabularies` packages are released together at the same version. Future package families may use versions unrelated to `text-vocabularies`.
+The `text-vocabularies` packages are released together at the same version. The `filesystem` family is versioned and released independently.
+
+## Filesystem boundary
+
+`MackySoft.FileSystem` validates raw path text once at a factory boundary, then carries normalized absolute paths, root-relative paths, and proven lexical containment through immutable guarded values. Separator, root, fully-qualified, casing, equality, and containment behavior follow the operating system running the process.
+
+The package does not access the filesystem or guarantee existence, node kind, permissions, symbolic-link behavior, physical containment, or the case sensitivity of a mounted volume. It contains no file I/O, locking, access-control, repository layout, cache, transport, or product-specific path policy.
 
 ## Text vocabulary boundary
 
@@ -32,6 +39,16 @@ bash scripts/verify.sh
 Pack and verify one package family:
 
 ```bash
+bash scripts/pack-package-family.sh \
+  --family filesystem \
+  --version 0.1.0 \
+  --output artifacts/filesystem
+
+bash scripts/verify-package-family.sh \
+  --family filesystem \
+  --version 0.1.0 \
+  --package-dir artifacts/filesystem
+
 bash scripts/pack-package-family.sh \
   --family text-vocabularies \
   --version 0.1.0 \

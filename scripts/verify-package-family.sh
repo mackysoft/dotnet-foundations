@@ -105,7 +105,17 @@ for package_id in "${package_family_ids[@]}"; do
   nuspec_entry="${package_id}.nuspec"
   package_entries="$(unzip -Z1 "${package_path}")"
 
-  for required_entry in "${nuspec_entry}" README.md LICENSE "lib/netstandard2.1/${package_id}.dll"; do
+  required_entries=(
+    "${nuspec_entry}"
+    README.md
+    LICENSE
+    "lib/netstandard2.1/${package_id}.dll"
+  )
+  if [[ "${package_id}" == "MackySoft.FileSystem" ]]; then
+    required_entries+=("lib/net8.0/${package_id}.dll")
+  fi
+
+  for required_entry in "${required_entries[@]}"; do
     if ! grep -Fx "${required_entry}" <<< "${package_entries}" >/dev/null; then
       echo "ERROR: ${package_id} is missing ${required_entry}." >&2
       exit 1
@@ -130,6 +140,13 @@ for package_id in "${package_family_ids[@]}"; do
   )"
 
   case "${package_id}" in
+    MackySoft.FileSystem)
+      if [[ -n "${dependency_ids}" ]]; then
+        echo "ERROR: Filesystem package must not declare package dependencies." >&2
+        printf '%s\n' "${dependency_ids}" >&2
+        exit 1
+      fi
+      ;;
     MackySoft.Text.Vocabularies)
       if [[ -n "${dependency_ids}" ]]; then
         echo "ERROR: Core vocabulary package must not declare package dependencies." >&2
@@ -159,13 +176,113 @@ export DOTNET_CLI_HOME="${temp_dir}/dotnet-home"
 export NUGET_PACKAGES="${temp_dir}/nuget-packages"
 mkdir -p "${DOTNET_CLI_HOME}" "${NUGET_PACKAGES}"
 
-dotnet new console --framework net10.0 --output "${consumer_dir}" --no-restore >/dev/null
-PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
-  my $version = $ENV{"PACKAGE_VERSION"};
-  s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.Text.Vocabularies.Json" Version="$version" />\n  </ItemGroup>\n</Project>};
-' "${consumer_dir}/consumer.csproj"
+package_source_xml_value="$(
+  PACKAGE_SOURCE_VALUE="${package_dir}" perl -e '
+    my $value = $ENV{"PACKAGE_SOURCE_VALUE"};
+    $value =~ s/&/&amp;/g;
+    $value =~ s/"/&quot;/g;
+    $value =~ s/</&lt;/g;
+    $value =~ s/>/&gt;/g;
+    print $value;
+  '
+)"
+nuget_config="${temp_dir}/NuGet.config"
+{
+  printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>'
+  printf '%s\n' '<configuration>'
+  printf '%s\n' '  <packageSources>'
+  printf '%s\n' '    <clear />'
+  printf '    <add key="package-family" value="%s" />\n' "${package_source_xml_value}"
+  printf '%s\n' '    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />'
+  printf '%s\n' '  </packageSources>'
+  printf '%s\n' '  <packageSourceMapping>'
+  printf '%s\n' '    <packageSource key="package-family">'
+  for package_id in "${package_family_ids[@]}"; do
+    printf '      <package pattern="%s" />\n' "${package_id}"
+  done
+  printf '%s\n' '    </packageSource>'
+  printf '%s\n' '    <packageSource key="nuget.org">'
+  printf '%s\n' '      <package pattern="Microsoft.*" />'
+  printf '%s\n' '      <package pattern="NETStandard.Library" />'
+  printf '%s\n' '      <package pattern="System.*" />'
+  printf '%s\n' '      <package pattern="runtime.*" />'
+  printf '%s\n' '    </packageSource>'
+  printf '%s\n' '  </packageSourceMapping>'
+  printf '%s\n' '</configuration>'
+} > "${nuget_config}"
 
-cat > "${consumer_dir}/Program.cs" <<'CS'
+verify_restored_package_provenance() {
+  local package_id
+  local package_directory_name
+  local package_metadata
+
+  for package_id in "${package_family_ids[@]}"; do
+    package_directory_name="$(
+      tr '[:upper:]' '[:lower:]' <<< "${package_id}"
+    )"
+    package_metadata="$(
+      printf '%s/%s/%s/.nupkg.metadata' \
+        "${NUGET_PACKAGES}" \
+        "${package_directory_name}" \
+        "${package_family_version}"
+    )"
+    if [[ ! -f "${package_metadata}" ]] \
+      || ! grep -F "\"source\": \"${package_dir}\"" "${package_metadata}" >/dev/null; then
+      echo "ERROR: External consumer did not restore ${package_id} from the generated package directory." >&2
+      exit 1
+    fi
+  done
+}
+
+case "${package_family_name}" in
+  filesystem)
+    dotnet new classlib \
+      --name FileSystemPackageConsumer \
+      --framework netstandard2.1 \
+      --output "${consumer_dir}" \
+      --no-restore \
+      >/dev/null
+    consumer_project_path="${consumer_dir}/FileSystemPackageConsumer.csproj"
+    PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
+      my $version = $ENV{"PACKAGE_VERSION"};
+      s{<TargetFramework>netstandard2\.1</TargetFramework>}{<TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>};
+      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.FileSystem" Version="[$version]" />\n  </ItemGroup>\n</Project>};
+    ' "${consumer_project_path}"
+    cat > "${consumer_dir}/Class1.cs" <<'CS'
+using MackySoft.FileSystem;
+
+namespace FileSystemPackageConsumer
+{
+    public static class GuardedPathConsumer
+    {
+        public static ContainedPath Resolve (string rootText, string pathText)
+        {
+            AbsolutePath root = AbsolutePath.Parse(rootText);
+            RootRelativePath relativePath = RootRelativePath.Parse(pathText);
+            return ContainedPath.Create(root, relativePath);
+        }
+    }
+}
+CS
+    dotnet restore "${consumer_project_path}" \
+      --no-cache \
+      --force-evaluate \
+      --configfile "${nuget_config}"
+    verify_restored_package_provenance
+    dotnet build \
+      "${consumer_project_path}" \
+      --configuration Release \
+      --no-restore
+    ;;
+  text-vocabularies)
+    dotnet new console --framework net10.0 --output "${consumer_dir}" --no-restore >/dev/null
+    consumer_project_path="${consumer_dir}/consumer.csproj"
+    PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
+      my $version = $ENV{"PACKAGE_VERSION"};
+      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.Text.Vocabularies.Json" Version="$version" />\n  </ItemGroup>\n</Project>};
+    ' "${consumer_project_path}"
+
+    cat > "${consumer_dir}/Program.cs" <<'CS'
 using System.Text.Json;
 using MackySoft.Text.Vocabularies;
 using MackySoft.Text.Vocabularies.Json;
@@ -191,12 +308,20 @@ enum ConsumerState
 }
 CS
 
-dotnet restore "${consumer_dir}/consumer.csproj" \
-  --source "${package_dir}" \
-  --source https://api.nuget.org/v3/index.json
-dotnet run \
-  --project "${consumer_dir}/consumer.csproj" \
-  --configuration Release \
-  --no-restore
+    dotnet restore "${consumer_project_path}" \
+      --no-cache \
+      --force-evaluate \
+      --configfile "${nuget_config}"
+    verify_restored_package_provenance
+    dotnet run \
+      --project "${consumer_project_path}" \
+      --configuration Release \
+      --no-restore
+    ;;
+  *)
+    echo "ERROR: Package consumer is not configured for ${package_family_name}." >&2
+    exit 1
+    ;;
+esac
 
 echo "Verified ${package_family_name} ${package_family_version}: ${package_dir}"
