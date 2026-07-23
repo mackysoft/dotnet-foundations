@@ -8,10 +8,17 @@ This repository owns product-independent .NET foundations shared by MackySoft pr
 
 | Family | Package | Version | Responsibility |
 | --- | --- | --- | --- |
+| `json-canonicalization` | [`MackySoft.Json.Canonicalization`](src/MackySoft.Json.Canonicalization/README.md) | `0.1.0` | RFC 8785 canonical UTF-8 JSON generation. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies`](src/MackySoft.Text.Vocabularies/README.md) | `0.1.0` | Finite typed vocabularies with exact canonical text mappings. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies.Json`](src/MackySoft.Text.Vocabularies.Json/README.md) | `0.1.0` | `System.Text.Json` string value and property-name adapters. |
 
-The `text-vocabularies` packages are released together at the same version. Future package families may use versions unrelated to `text-vocabularies`.
+The `text-vocabularies` packages are released together at the same version. The `json-canonicalization` family is versioned and released independently.
+
+## JSON canonicalization boundary
+
+`MackySoft.Json.Canonicalization` produces canonical UTF-8 bytes for JSON values according to RFC 8785. It owns strict JSON input validation, binary64 number interpretation, deterministic serialization, and classified canonicalization failures.
+
+The package does not define hash or digest APIs, product-specific projections or validation, JSON Schema generation, artifact storage, or Unity distribution.
 
 ## Text vocabulary boundary
 
@@ -35,12 +42,26 @@ Pack and verify one package family:
 bash scripts/pack-package-family.sh \
   --family text-vocabularies \
   --version 0.1.0 \
-  --output artifacts/packages
+  --output artifacts/packages/text-vocabularies
 
 bash scripts/verify-package-family.sh \
   --family text-vocabularies \
   --version 0.1.0 \
-  --package-dir artifacts/packages
+  --package-dir artifacts/packages/text-vocabularies
+```
+
+To pack and verify the JSON canonicalization family:
+
+```bash
+bash scripts/pack-package-family.sh \
+  --family json-canonicalization \
+  --version 0.1.0 \
+  --output artifacts/packages/json-canonicalization
+
+bash scripts/verify-package-family.sh \
+  --family json-canonicalization \
+  --version 0.1.0 \
+  --package-dir artifacts/packages/json-canonicalization
 ```
 
 The package consumer verification restores from the generated local packages and builds a separate application. It therefore checks the NuGet dependency boundary rather than project-reference behavior.
