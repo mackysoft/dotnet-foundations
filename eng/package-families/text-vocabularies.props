@@ -1,0 +1,7 @@
+<Project>
+
+  <PropertyGroup>
+    <TextVocabulariesVersion Condition="'$(TextVocabulariesVersion)' == ''">0.1.0</TextVocabulariesVersion>
+  </PropertyGroup>
+
+</Project>

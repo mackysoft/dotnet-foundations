@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace MackySoft.Text.Vocabularies.Tests;
 
 public sealed class VocabularyTests

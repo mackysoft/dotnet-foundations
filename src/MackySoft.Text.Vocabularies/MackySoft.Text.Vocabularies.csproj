@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="../../eng/package-families/text-vocabularies.props" />
+
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <AssemblyName>MackySoft.Text.Vocabularies</AssemblyName>
@@ -10,6 +12,8 @@
     <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
     <IsPackable>true</IsPackable>
     <PackageId>MackySoft.Text.Vocabularies</PackageId>
+    <Version>$(TextVocabulariesVersion)</Version>
+    <PackageVersion>$(TextVocabulariesVersion)</PackageVersion>
     <Description>Finite typed vocabularies with canonical text mappings.</Description>
     <PackageTags>text;vocabulary;serialization</PackageTags>
   </PropertyGroup>

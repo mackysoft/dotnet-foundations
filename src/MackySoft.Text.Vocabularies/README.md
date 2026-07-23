@@ -1,6 +1,6 @@
 # MackySoft.Text.Vocabularies
 
-[![NuGet](https://img.shields.io/nuget/v/MackySoft.Text.Vocabularies?label=MackySoft.Text.Vocabularies)](https://www.nuget.org/packages/MackySoft.Text.Vocabularies) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mackysoft/ucli/blob/master/LICENSE)
+[![NuGet](https://img.shields.io/nuget/v/MackySoft.Text.Vocabularies?label=MackySoft.Text.Vocabularies)](https://www.nuget.org/packages/MackySoft.Text.Vocabularies) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mackysoft/dotnet-foundations/blob/master/LICENSE)
 
 `MackySoft.Text.Vocabularies` defines finite, typed vocabularies whose values map one-to-one to canonical text.
 
@@ -63,8 +63,8 @@ For `System.Text.Json` string values and property names, use `MackySoft.Text.Voc
 
 ## Repository and Support
 
-Source, issues, and support are available in the [uCLI repository](https://github.com/mackysoft/ucli).
+Source, issues, and support are available in the [MackySoft .NET Foundations repository](https://github.com/mackysoft/dotnet-foundations).
 
 ## License
 
-This package is under the [MIT License](https://github.com/mackysoft/ucli/blob/master/LICENSE).
+This package is under the [MIT License](https://github.com/mackysoft/dotnet-foundations/blob/master/LICENSE).

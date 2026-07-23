@@ -1,6 +1,6 @@
 # MackySoft.Text.Vocabularies.Json
 
-[![NuGet](https://img.shields.io/nuget/v/MackySoft.Text.Vocabularies.Json?label=MackySoft.Text.Vocabularies.Json)](https://www.nuget.org/packages/MackySoft.Text.Vocabularies.Json) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mackysoft/ucli/blob/master/LICENSE)
+[![NuGet](https://img.shields.io/nuget/v/MackySoft.Text.Vocabularies.Json?label=MackySoft.Text.Vocabularies.Json)](https://www.nuget.org/packages/MackySoft.Text.Vocabularies.Json) [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/mackysoft/dotnet-foundations/blob/master/LICENSE)
 
 `MackySoft.Text.Vocabularies.Json` reads and writes declared vocabulary values as JSON strings and dictionary property names.
 
@@ -53,8 +53,8 @@ The adapter does not trim, ignore case, resolve aliases, generate JSON Schema, o
 
 ## Repository and Support
 
-Source, issues, and support are available in the [uCLI repository](https://github.com/mackysoft/ucli).
+Source, issues, and support are available in the [MackySoft .NET Foundations repository](https://github.com/mackysoft/dotnet-foundations).
 
 ## License
 
-This package is under the [MIT License](https://github.com/mackysoft/ucli/blob/master/LICENSE).
+This package is under the [MIT License](https://github.com/mackysoft/dotnet-foundations/blob/master/LICENSE).
