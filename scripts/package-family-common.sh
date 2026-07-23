@@ -4,6 +4,21 @@ resolve_package_family() {
   local requested_family="$1"
 
   case "${requested_family}" in
+    json-canonicalization)
+      package_family_name="json-canonicalization"
+      package_family_version="$(
+        sed -nE 's#.*<JsonCanonicalizationVersion[^>]*>([^<]+)</JsonCanonicalizationVersion>.*#\1#p' \
+          "${repository_root}/eng/package-families/json-canonicalization.props" |
+          head -n 1
+      )"
+      package_family_version_property="JsonCanonicalizationVersion"
+      package_family_ids=(
+        "MackySoft.Json.Canonicalization"
+      )
+      package_family_projects=(
+        "src/MackySoft.Json.Canonicalization/MackySoft.Json.Canonicalization.csproj"
+      )
+      ;;
     text-vocabularies)
       package_family_name="text-vocabularies"
       package_family_version="$(
