@@ -1,0 +1,79 @@
+name: verify
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    name: dotnet (${{ matrix.os_name }})
+    runs-on: ${{ matrix.runs_on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os_name: linux
+            runs_on: ubuntu-latest
+          - os_name: macos
+            runs_on: macos-latest
+          - os_name: windows
+            runs_on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('DotNetFoundations.slnx', '**/*.csproj') }}
+
+      - name: Verify source
+        run: bash scripts/verify.sh
+
+  package:
+    name: package (text-vocabularies)
+    needs: dotnet
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Pack package family
+        run: >-
+          bash scripts/pack-package-family.sh
+          --family text-vocabularies
+          --version 0.1.0
+          --output artifacts/packages
+
+      - name: Verify package family
+        run: >-
+          bash scripts/verify-package-family.sh
+          --family text-vocabularies
+          --version 0.1.0
+          --package-dir artifacts/packages
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: text-vocabularies-0.1.0
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
