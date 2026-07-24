@@ -25,6 +25,12 @@
 - The package forms the independently versioned `json-canonicalization` family. Its initial version is `0.1.0`.
 - Keep hash and digest APIs, product-specific projections and validation, JSON Schema generation, artifact storage, and Unity distribution outside this family.
 
+## Test responsibility
+
+- Automated tests verify observable package behavior and public API contracts.
+- Do not use test projects to inspect repository layout, project files, package metadata, workflow files, dependency direction, or source placement.
+- Project references and package dependencies are declared by project files. Final package contents, dependency closure, and isolated consumer installation are verified by the package verification scripts and CI.
+
 ## Validation
 
 ```bash
