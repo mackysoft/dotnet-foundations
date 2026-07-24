@@ -1,0 +1,16 @@
+<Project>
+
+  <PropertyGroup>
+    <Authors>Hiroya Aramaki</Authors>
+    <Company>MackySoft</Company>
+    <RepositoryUrl>https://github.com/mackysoft/dotnet-foundations</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright (c) 2026 Hiroya Aramaki</Copyright>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+</Project>

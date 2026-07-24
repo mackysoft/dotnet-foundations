@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../eng/package-families/text-vocabularies.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>MackySoft.Text.Vocabularies.Json</AssemblyName>
+    <RootNamespace>MackySoft.Text.Vocabularies.Json</RootNamespace>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <IsPackable>true</IsPackable>
+    <PackageId>MackySoft.Text.Vocabularies.Json</PackageId>
+    <Version>$(TextVocabulariesVersion)</Version>
+    <PackageVersion>$(TextVocabulariesVersion)</PackageVersion>
+    <Description>System.Text.Json adapters for finite typed text vocabularies.</Description>
+    <PackageTags>text;vocabulary;serialization;json</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MackySoft.Text.Vocabularies/MackySoft.Text.Vocabularies.csproj">
+      <Version>$(TextVocabulariesVersion)</Version>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" Link="LICENSE" />
+    <None Update="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
