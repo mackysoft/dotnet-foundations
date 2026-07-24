@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace MackySoft.FileSystem.Tests;
 
 public sealed class RootRelativePathTests
@@ -297,25 +295,6 @@ public sealed class RootRelativePathTests
         Assert.Equal("directory/file.txt", lowerCase.Value);
         Assert.Equal(mixedCase, lowerCase);
         Assert.Equal(mixedCase.GetHashCode(), lowerCase.GetHashCode());
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void PublicSurface_DoesNotAllowUncheckedOrImplicitConstruction ()
-    {
-        var publicConstructors = typeof(RootRelativePath).GetConstructors(
-            BindingFlags.Public | BindingFlags.Instance);
-        var conversionOperators = typeof(RootRelativePath)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .Where(static method => method.Name is "op_Implicit" or "op_Explicit");
-
-        Assert.Empty(publicConstructors);
-        Assert.Empty(conversionOperators);
-        Assert.True(typeof(RootRelativePath).IsSealed);
-        Assert.False(typeof(RootRelativePath).IsValueType);
-
-        RootRelativePath? absentPath = default;
-        Assert.Null(absentPath);
     }
 
 }

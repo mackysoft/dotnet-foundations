@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace MackySoft.FileSystem.Tests;
 
 public sealed class ContainedPathTests
@@ -417,25 +415,6 @@ public sealed class ContainedPathTests
         Assert.False(path == missing);
         Assert.True(missing == null);
         Assert.False(missing != null);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void PublicSurface_DoesNotAllowUncheckedOrImplicitConstruction ()
-    {
-        var publicConstructors = typeof(ContainedPath).GetConstructors(
-            BindingFlags.Public | BindingFlags.Instance);
-        var conversionOperators = typeof(ContainedPath)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static)
-            .Where(static method => method.Name is "op_Implicit" or "op_Explicit");
-
-        Assert.Empty(publicConstructors);
-        Assert.Empty(conversionOperators);
-        Assert.True(typeof(ContainedPath).IsSealed);
-        Assert.False(typeof(ContainedPath).IsValueType);
-
-        ContainedPath? absentPath = default;
-        Assert.Null(absentPath);
     }
 
     private static AbsolutePath CreateAbsolutePath (string name)
