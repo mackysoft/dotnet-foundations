@@ -12,6 +12,13 @@
 - `MackySoft.Text.Vocabularies.Json` owns only the `System.Text.Json` adapter.
 - The two packages form the `text-vocabularies` release family and must use the same version.
 
+## Filesystem paths
+
+- `MackySoft.FileSystem` owns immutable guarded values for normalized absolute paths, root-relative paths, and lexical containment under the running operating system's path rules.
+- Raw path text is accepted only at factory boundaries. Typed combination and derivation must not return to a raw parser.
+- The package does not own file I/O, mutable physical state, symbolic-link guarantees, locks, access control, storage layouts, transports, or product-specific path policies.
+- `MackySoft.FileSystem` forms the independently versioned `filesystem` release family.
+
 ## JSON canonicalization
 
 - `MackySoft.Json.Canonicalization` owns product-independent RFC 8785 canonical UTF-8 JSON generation and classified input failures.
@@ -22,6 +29,16 @@
 
 ```bash
 bash scripts/verify.sh
+
+bash scripts/pack-package-family.sh \
+  --family filesystem \
+  --version 0.1.0 \
+  --output artifacts/filesystem
+
+bash scripts/verify-package-family.sh \
+  --family filesystem \
+  --version 0.1.0 \
+  --package-dir artifacts/filesystem
 
 bash scripts/pack-package-family.sh \
   --family text-vocabularies \
