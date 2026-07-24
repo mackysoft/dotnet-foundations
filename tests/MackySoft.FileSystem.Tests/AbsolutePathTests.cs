@@ -1,3 +1,5 @@
+using System.Reflection;
+
 namespace MackySoft.FileSystem.Tests;
 
 public sealed class AbsolutePathTests
@@ -691,6 +693,25 @@ public sealed class AbsolutePathTests
         Assert.Equal(expectedRoot, current);
         Assert.False(current.TryGetParent(out var rootParent));
         Assert.Null(rootParent);
+    }
+
+    [Fact]
+    [Trait("Size", "Small")]
+    public void PublicSurface_DoesNotAllowUncheckedOrImplicitConstruction ()
+    {
+        var publicConstructors = typeof(AbsolutePath).GetConstructors(
+            BindingFlags.Public | BindingFlags.Instance);
+        var conversionOperators = typeof(AbsolutePath)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Where(static method => method.Name is "op_Implicit" or "op_Explicit");
+
+        Assert.Empty(publicConstructors);
+        Assert.Empty(conversionOperators);
+        Assert.True(typeof(AbsolutePath).IsSealed);
+        Assert.False(typeof(AbsolutePath).IsValueType);
+
+        AbsolutePath? absentPath = default;
+        Assert.Null(absentPath);
     }
 
     [Fact]

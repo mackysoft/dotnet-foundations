@@ -211,6 +211,37 @@ public sealed class Rfc8785JsonCanonicalizerContractTests
 
     [Fact]
     [Trait("Size", "Small")]
+    public void FailureKind_ContainsOnlyTheClosedContractSet ()
+    {
+        Assert.Equal(
+            [
+                JsonCanonicalizationFailureKind.InvalidJson,
+                JsonCanonicalizationFailureKind.DuplicateProperty,
+                JsonCanonicalizationFailureKind.InvalidUnicode,
+                JsonCanonicalizationFailureKind.NumberNotRepresentable,
+                JsonCanonicalizationFailureKind.NegativeZero,
+                JsonCanonicalizationFailureKind.MaximumDepthExceeded,
+            ],
+            Enum.GetValues<JsonCanonicalizationFailureKind>());
+    }
+
+    [Fact]
+    [Trait("Size", "Small")]
+    public void Assembly_ExportsOnlyTheCanonicalizationContractTypes ()
+    {
+        Assert.Equal(
+            [
+                typeof(JsonCanonicalizationException),
+                typeof(JsonCanonicalizationFailureKind),
+                typeof(Rfc8785JsonCanonicalizer),
+            ],
+            typeof(Rfc8785JsonCanonicalizer).Assembly
+                .GetExportedTypes()
+                .OrderBy(static type => type.FullName, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    [Trait("Size", "Small")]
     public void Canonicalize_RoundsJsonNumberToItsBinary64Value ()
     {
         byte[] result = Rfc8785JsonCanonicalizer.Canonicalize(
