@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../eng/package-families/filesystem.props" />
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>
+    <AssemblyName>MackySoft.FileSystem</AssemblyName>
+    <RootNamespace>MackySoft.FileSystem</RootNamespace>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <IsPackable>true</IsPackable>
+    <PackageId>MackySoft.FileSystem</PackageId>
+    <Version>$(FileSystemVersion)</Version>
+    <PackageVersion>$(FileSystemVersion)</PackageVersion>
+    <Description>Guarded lexical filesystem path values with current-platform identity semantics.</Description>
+    <PackageTags>filesystem;path;value-object</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" Link="LICENSE" />
+    <None Remove="README.md" />
+    <None Include="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>

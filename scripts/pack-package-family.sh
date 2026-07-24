@@ -63,7 +63,9 @@ for package_id in "${package_family_ids[@]}"; do
   fi
 done
 
-dotnet restore "${repository_root}/DotNetFoundations.slnx"
+for project_path in "${package_family_projects[@]}"; do
+  dotnet restore "${repository_root}/${project_path}"
+done
 
 for project_path in "${package_family_projects[@]}"; do
   dotnet pack "${repository_root}/${project_path}" \

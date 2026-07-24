@@ -4,6 +4,21 @@ resolve_package_family() {
   local requested_family="$1"
 
   case "${requested_family}" in
+    filesystem)
+      package_family_name="filesystem"
+      package_family_version="$(
+        sed -nE 's#.*<FileSystemVersion[^>]*>([^<]+)</FileSystemVersion>.*#\1#p' \
+          "${repository_root}/eng/package-families/filesystem.props" |
+          head -n 1
+      )"
+      package_family_version_property="FileSystemVersion"
+      package_family_ids=(
+        "MackySoft.FileSystem"
+      )
+      package_family_projects=(
+        "src/MackySoft.FileSystem/MackySoft.FileSystem.csproj"
+      )
+      ;;
     text-vocabularies)
       package_family_name="text-vocabularies"
       package_family_version="$(
