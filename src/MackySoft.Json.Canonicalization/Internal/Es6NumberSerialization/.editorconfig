@@ -1,0 +1,5 @@
+[*.cs]
+
+# Preserve upstream identifiers and assignments so provenance remains reviewable.
+dotnet_diagnostic.IDE0059.severity = none
+dotnet_diagnostic.IDE1006.severity = none

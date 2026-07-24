@@ -1,0 +1,7 @@
+<Project>
+
+  <PropertyGroup>
+    <JsonCanonicalizationVersion Condition="'$(JsonCanonicalizationVersion)' == ''">0.1.0</JsonCanonicalizationVersion>
+  </PropertyGroup>
+
+</Project>

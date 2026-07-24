@@ -9,6 +9,7 @@ on:
         type: choice
         options:
           - filesystem
+          - json-canonicalization
           - text-vocabularies
       version:
         description: Package family version

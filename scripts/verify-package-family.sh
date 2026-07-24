@@ -114,6 +114,14 @@ for package_id in "${package_family_ids[@]}"; do
   if [[ "${package_id}" == "MackySoft.FileSystem" ]]; then
     required_entries+=("lib/net8.0/${package_id}.dll")
   fi
+  if [[ "${package_id}" == "MackySoft.Json.Canonicalization" ]]; then
+    required_entries+=(
+      THIRD-PARTY-NOTICES.md
+      licenses/Apache-2.0.txt
+      licenses/MPL-2.0.txt
+      "lib/netstandard2.1/${package_id}.xml"
+    )
+  fi
 
   for required_entry in "${required_entries[@]}"; do
     if ! grep -Fx "${required_entry}" <<< "${package_entries}" >/dev/null; then
@@ -144,6 +152,36 @@ for package_id in "${package_family_ids[@]}"; do
       if [[ -n "${dependency_ids}" ]]; then
         echo "ERROR: Filesystem package must not declare package dependencies." >&2
         printf '%s\n' "${dependency_ids}" >&2
+        exit 1
+      fi
+      ;;
+    MackySoft.Json.Canonicalization)
+      expected_dependencies="System.Text.Json"
+      if [[ "${dependency_ids}" != "${expected_dependencies}" ]]; then
+        echo "ERROR: JSON canonicalization dependency set is incorrect." >&2
+        printf '%s\n' "${dependency_ids}" >&2
+        exit 1
+      fi
+
+      third_party_notices="${temp_dir}/${package_id}.THIRD-PARTY-NOTICES.md"
+      apache_license="${temp_dir}/${package_id}.Apache-2.0.txt"
+      mpl_license="${temp_dir}/${package_id}.MPL-2.0.txt"
+      unzip -p "${package_path}" THIRD-PARTY-NOTICES.md > "${third_party_notices}"
+      unzip -p "${package_path}" licenses/Apache-2.0.txt > "${apache_license}"
+      unzip -p "${package_path}" licenses/MPL-2.0.txt > "${mpl_license}"
+      if ! grep -F "19d51d7fe467d4706a3ff08adf8a748f29fc21e0" "${third_party_notices}" >/dev/null \
+        || ! grep -F "dotnet/es6numberserializer" "${third_party_notices}" >/dev/null \
+        || ! grep -F "Copyright 2010 the V8 project authors" "${third_party_notices}" >/dev/null \
+        || ! grep -F "Copyright (c) 1991, 2000, 2001 by Lucent Technologies" "${third_party_notices}" >/dev/null \
+        || ! grep -F "Mozilla Public License files" "${third_party_notices}" >/dev/null \
+        || ! grep -F "Copyright 2006-2018 WebPKI.org" "${third_party_notices}" >/dev/null; then
+        echo "ERROR: JSON canonicalization third-party notice is incomplete." >&2
+        exit 1
+      fi
+      if ! grep -F "Apache License" "${apache_license}" >/dev/null \
+        || ! grep -F "Version 2.0, January 2004" "${apache_license}" >/dev/null \
+        || ! grep -F "Mozilla Public License Version 2.0" "${mpl_license}" >/dev/null; then
+        echo "ERROR: JSON canonicalization third-party license text is incomplete." >&2
         exit 1
       fi
       ;;
@@ -274,12 +312,63 @@ CS
       --configuration Release \
       --no-restore
     ;;
+  json-canonicalization)
+    dotnet new console --framework net10.0 --output "${consumer_dir}" --no-restore >/dev/null
+    consumer_project_path="${consumer_dir}/consumer.csproj"
+    PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
+      my $version = $ENV{"PACKAGE_VERSION"};
+      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.Json.Canonicalization" Version="[$version]" />\n  </ItemGroup>\n</Project>};
+    ' "${consumer_project_path}"
+    cat > "${consumer_dir}/Program.cs" <<'CS'
+using System.Text;
+using System.Text.Json;
+using MackySoft.Json.Canonicalization;
+
+byte[] rawJson = Encoding.UTF8.GetBytes(
+    """{"b":1,"a":9007199254740993,"text":"€"}""");
+byte[] canonicalJson = Rfc8785JsonCanonicalizer.Canonicalize(rawJson);
+const string expected = """{"a":9007199254740992,"b":1,"text":"€"}""";
+
+using JsonDocument document = JsonDocument.Parse(rawJson);
+byte[] canonicalElement = Rfc8785JsonCanonicalizer.Canonicalize(document.RootElement);
+
+if (Encoding.UTF8.GetString(canonicalJson) != expected
+    || !canonicalJson.AsSpan().SequenceEqual(canonicalElement))
+{
+    throw new InvalidOperationException(
+        "Package consumer observed unexpected RFC 8785 canonical bytes.");
+}
+
+try
+{
+    Rfc8785JsonCanonicalizer.Canonicalize(
+        Encoding.UTF8.GetBytes("""{"duplicate":1,"duplicate":2}"""));
+}
+catch (JsonCanonicalizationException exception)
+    when (exception.FailureKind == JsonCanonicalizationFailureKind.DuplicateProperty)
+{
+    return;
+}
+
+throw new InvalidOperationException(
+    "Package consumer did not observe the expected duplicate-property failure.");
+CS
+    dotnet restore "${consumer_project_path}" \
+      --no-cache \
+      --force-evaluate \
+      --configfile "${nuget_config}"
+    verify_restored_package_provenance
+    dotnet run \
+      --project "${consumer_project_path}" \
+      --configuration Release \
+      --no-restore
+    ;;
   text-vocabularies)
     dotnet new console --framework net10.0 --output "${consumer_dir}" --no-restore >/dev/null
     consumer_project_path="${consumer_dir}/consumer.csproj"
     PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
       my $version = $ENV{"PACKAGE_VERSION"};
-      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.Text.Vocabularies.Json" Version="$version" />\n  </ItemGroup>\n</Project>};
+      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.Text.Vocabularies.Json" Version="[$version]" />\n  </ItemGroup>\n</Project>};
     ' "${consumer_project_path}"
 
     cat > "${consumer_dir}/Program.cs" <<'CS'
@@ -307,7 +396,6 @@ enum ConsumerState
     Ready,
 }
 CS
-
     dotnet restore "${consumer_project_path}" \
       --no-cache \
       --force-evaluate \

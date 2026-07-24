@@ -19,6 +19,12 @@
 - The package does not own file I/O, mutable physical state, symbolic-link guarantees, locks, access control, storage layouts, transports, or product-specific path policies.
 - `MackySoft.FileSystem` forms the independently versioned `filesystem` release family.
 
+## JSON canonicalization
+
+- `MackySoft.Json.Canonicalization` owns product-independent RFC 8785 canonical UTF-8 JSON generation and classified input failures.
+- The package forms the independently versioned `json-canonicalization` family. Its initial version is `0.1.0`.
+- Keep hash and digest APIs, product-specific projections and validation, JSON Schema generation, artifact storage, and Unity distribution outside this family.
+
 ## Validation
 
 ```bash
@@ -37,12 +43,22 @@ bash scripts/verify-package-family.sh \
 bash scripts/pack-package-family.sh \
   --family text-vocabularies \
   --version 0.1.0 \
-  --output artifacts/packages
+  --output artifacts/packages/text-vocabularies
 
 bash scripts/verify-package-family.sh \
   --family text-vocabularies \
   --version 0.1.0 \
-  --package-dir artifacts/packages
+  --package-dir artifacts/packages/text-vocabularies
+
+bash scripts/pack-package-family.sh \
+  --family json-canonicalization \
+  --version 0.1.0 \
+  --output artifacts/packages/json-canonicalization
+
+bash scripts/verify-package-family.sh \
+  --family json-canonicalization \
+  --version 0.1.0 \
+  --package-dir artifacts/packages/json-canonicalization
 ```
 
 ## Release

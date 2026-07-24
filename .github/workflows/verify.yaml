@@ -53,6 +53,8 @@ jobs:
         include:
           - family: filesystem
             version: 0.1.0
+          - family: json-canonicalization
+            version: 0.1.0
           - family: text-vocabularies
             version: 0.1.0
 
