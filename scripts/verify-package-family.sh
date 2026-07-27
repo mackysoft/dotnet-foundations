@@ -122,6 +122,9 @@ for package_id in "${package_family_ids[@]}"; do
       "lib/netstandard2.1/${package_id}.xml"
     )
   fi
+  if [[ "${package_id}" == "MackySoft.JsonSchema.Generation" ]]; then
+    required_entries+=("lib/netstandard2.1/${package_id}.xml")
+  fi
 
   for required_entry in "${required_entries[@]}"; do
     if ! grep -Fx "${required_entry}" <<< "${package_entries}" >/dev/null; then
@@ -185,6 +188,38 @@ for package_id in "${package_family_ids[@]}"; do
         exit 1
       fi
       ;;
+    MackySoft.JsonSchema.Generation)
+      expected_dependencies=$'MackySoft.Json.Canonicalization\nMackySoft.Text.Vocabularies\nSystem.Text.Json'
+      if [[ "${dependency_ids}" != "${expected_dependencies}" ]]; then
+        echo "ERROR: JSON Schema generation dependency set is incorrect." >&2
+        printf '%s\n' "${dependency_ids}" >&2
+        exit 1
+      fi
+
+      canonicalization_dependency_version="$(
+        read_dependency_version "${nuspec_path}" "MackySoft.Json.Canonicalization"
+      )"
+      if [[ "${canonicalization_dependency_version}" != "0.1.0" ]]; then
+        echo "ERROR: JSON Schema generation must depend on MackySoft.Json.Canonicalization 0.1.0." >&2
+        exit 1
+      fi
+
+      vocabulary_dependency_version="$(
+        read_dependency_version "${nuspec_path}" "MackySoft.Text.Vocabularies"
+      )"
+      if [[ "${vocabulary_dependency_version}" != "0.1.0" ]]; then
+        echo "ERROR: JSON Schema generation must depend on MackySoft.Text.Vocabularies 0.1.0." >&2
+        exit 1
+      fi
+
+      system_text_json_dependency_version="$(
+        read_dependency_version "${nuspec_path}" "System.Text.Json"
+      )"
+      if [[ "${system_text_json_dependency_version}" != "8.0.5" ]]; then
+        echo "ERROR: JSON Schema generation must depend on System.Text.Json 8.0.5." >&2
+        exit 1
+      fi
+      ;;
     MackySoft.Text.Vocabularies)
       if [[ -n "${dependency_ids}" ]]; then
         echo "ERROR: Core vocabulary package must not declare package dependencies." >&2
@@ -241,6 +276,10 @@ nuget_config="${temp_dir}/NuGet.config"
   printf '%s\n' '    </packageSource>'
   printf '%s\n' '    <packageSource key="nuget.org">'
   printf '%s\n' '      <package pattern="Microsoft.*" />'
+  if [[ "${package_family_name}" == "json-schema-generation" ]]; then
+    printf '%s\n' '      <package pattern="MackySoft.Json.Canonicalization" />'
+    printf '%s\n' '      <package pattern="MackySoft.Text.Vocabularies" />'
+  fi
   printf '%s\n' '      <package pattern="NETStandard.Library" />'
   printf '%s\n' '      <package pattern="System.*" />'
   printf '%s\n' '      <package pattern="runtime.*" />'
@@ -360,6 +399,195 @@ CS
     verify_restored_package_provenance
     dotnet run \
       --project "${consumer_project_path}" \
+      --configuration Release \
+      --no-restore
+    ;;
+  json-schema-generation)
+    dotnet new classlib \
+      --name JsonSchemaGenerationPackageConsumer \
+      --framework netstandard2.1 \
+      --output "${consumer_dir}" \
+      --no-restore \
+      >/dev/null
+    consumer_project_path="${consumer_dir}/JsonSchemaGenerationPackageConsumer.csproj"
+    PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
+      my $version = $ENV{"PACKAGE_VERSION"};
+      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.JsonSchema.Generation" Version="[$version]" />\n  </ItemGroup>\n</Project>};
+    ' "${consumer_project_path}"
+    cat > "${consumer_dir}/Class1.cs" <<'CS'
+using System;
+using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using MackySoft.JsonSchema.Generation;
+using MackySoft.JsonSchema.Generation.Annotations;
+using MackySoft.JsonSchema.Generation.Configuration;
+using MackySoft.JsonSchema.Generation.ContractModel;
+using MackySoft.JsonSchema.Generation.Extensibility;
+using MackySoft.JsonSchema.Generation.Projection;
+
+namespace JsonSchemaGenerationPackageConsumer
+{
+    public static class ContractModelConsumer
+    {
+        public static System.Type ContractModelType => typeof(JsonContractModel);
+
+        public static JsonContractGenerationResult Generate()
+        {
+            var serializerOptions = new JsonSerializerOptions
+            {
+                UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+            };
+            var generator = new JsonContractGenerator(
+                new JsonContractGeneratorOptions(
+                    JsonContractGenerationSettings.ClosedObjects,
+                    modelContributors: new IJsonContractModelContributor[]
+                    {
+                        new ConsumerModelContributor(),
+                    }));
+            return generator.Generate(
+                new JsonContractGenerationRequest(
+                    "package.consumer/example",
+                    typeof(ExampleContract),
+                    serializerOptions,
+                    new DefaultJsonTypeInfoResolver(),
+                    new JsonSchemaDocumentOptions(
+                        JsonSchemaDocumentKind.Complete,
+                        id: null,
+                        logicalName: "example")));
+        }
+
+        public static void Verify()
+        {
+            JsonContractGenerationResult result = Generate();
+            byte[] schemaUtf8 = result.GetJsonSchemaUtf8();
+            byte[] metadataUtf8 = result.GetTypeMetadataUtf8();
+
+            using JsonDocument schema = JsonDocument.Parse(schemaUtf8);
+            using JsonDocument metadata = JsonDocument.Parse(metadataUtf8);
+            JsonElement schemaRoot = schema.RootElement;
+            JsonElement metadataRoot = metadata.RootElement;
+
+            if (result.Model.ContractId != "package.consumer/example"
+                || result.ContractDigest.Length != 64
+                || !IsLowercaseHex(result.ContractDigest)
+                || schemaRoot.GetProperty("$schema").GetString()
+                    != JsonContractGenerationSettings.Draft202012Dialect
+                || schemaRoot.GetProperty("x-contract-id").GetString()
+                    != result.Model.ContractId
+                || schemaRoot.GetProperty("x-contract-digest").GetString()
+                    != result.ContractDigest
+                || schemaRoot
+                    .GetProperty("properties")
+                    .GetProperty("Value")
+                    .GetProperty("description")
+                    .GetString()
+                    != "Package consumer value."
+                || metadataRoot.GetProperty("contractId").GetString()
+                    != result.Model.ContractId
+                || metadataRoot.GetProperty("contractDigest").GetString()
+                    != result.ContractDigest
+                || metadataRoot.GetProperty("schemaName").GetString()
+                    != "example"
+                || metadataRoot
+                    .GetProperty("root")
+                    .GetProperty("kind")
+                    .GetString()
+                    != "object"
+                || metadataRoot
+                    .GetProperty("contributions")
+                    .GetArrayLength()
+                    != 1
+                || metadataRoot
+                    .GetProperty("contributions")[0]
+                    .GetProperty("targetPointer")
+                    .GetString()
+                    != "/root/properties/0/value")
+            {
+                throw new InvalidOperationException(
+                    "Package consumer observed inconsistent contract generation outputs.");
+            }
+        }
+
+        private static bool IsLowercaseHex(string value)
+        {
+            foreach (char character in value)
+            {
+                if (!((character >= '0' && character <= '9')
+                    || (character >= 'a' && character <= 'f')))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    public sealed class ExampleContract
+    {
+        [JsonContractDescription("Package consumer value.")]
+        public string Value { get; set; } = string.Empty;
+    }
+
+    public sealed class ConsumerModelContributor : IJsonContractModelContributor
+    {
+        public string StableId => "package.consumer.contributor";
+
+        public string ContractVersion => "1";
+
+        public IReadOnlyList<JsonContractModelContribution> GetContributions(
+            JsonContractModelContext context)
+        {
+            JsonContractModelTarget target =
+                context.GetTarget(context.Root.Properties[0].Value);
+            return new[]
+            {
+                new JsonContractModelContribution(
+                    target,
+                    "consumerHint",
+                    JsonSerializer.SerializeToElement(true),
+                    StableId),
+            };
+        }
+    }
+}
+CS
+    dotnet restore "${consumer_project_path}" \
+      --no-cache \
+      --force-evaluate \
+      --configfile "${nuget_config}"
+    verify_restored_package_provenance
+    dotnet build \
+      "${consumer_project_path}" \
+      --configuration Release \
+      --no-restore
+
+    runnable_host_dir="${temp_dir}/runnable-host"
+    dotnet new console \
+      --name JsonSchemaGenerationPackageConsumerHost \
+      --framework net10.0 \
+      --output "${runnable_host_dir}" \
+      --no-restore \
+      >/dev/null
+    runnable_host_project_path="${runnable_host_dir}/JsonSchemaGenerationPackageConsumerHost.csproj"
+    PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
+      my $version = $ENV{"PACKAGE_VERSION"};
+      s{</Project>}{  <ItemGroup>\n    <ProjectReference Include="../consumer/JsonSchemaGenerationPackageConsumer.csproj" />\n    <PackageReference Include="MackySoft.JsonSchema.Generation" Version="[$version]" />\n  </ItemGroup>\n</Project>};
+    ' "${runnable_host_project_path}"
+    cat > "${runnable_host_dir}/Program.cs" <<'CS'
+using JsonSchemaGenerationPackageConsumer;
+
+ContractModelConsumer.Verify();
+CS
+    dotnet restore "${runnable_host_project_path}" \
+      --no-cache \
+      --force-evaluate \
+      --configfile "${nuget_config}"
+    verify_restored_package_provenance
+    dotnet run \
+      --project "${runnable_host_project_path}" \
       --configuration Release \
       --no-restore
     ;;

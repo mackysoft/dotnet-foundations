@@ -1,0 +1,1124 @@
+{
+  "subjects": {
+    "owned": [
+      {
+        "matches": [
+          {
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation"
+            ]
+          }
+        ]
+      }
+    ],
+    "external": []
+  },
+  "classifiers": {
+    "codeKind": [],
+    "domain": [
+      {
+        "label": "package-family",
+        "matches": [
+          {
+            "pathExact": [
+              "src/MackySoft.JsonSchema.Generation/MackySoft.JsonSchema.Generation.csproj"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "api",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Generation"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "annotations",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Annotations"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Annotations"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "configuration",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Configuration"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Configuration"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "contract-model",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.ContractModel"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/ContractModel"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "diagnostics",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Diagnostics"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Diagnostics"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "extensibility",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Extensibility"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Extensibility"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "metadata-api",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Metadata"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Metadata"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "projection-api",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Projection"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Projection"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "common",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Common"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Common"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "determinism",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Determinism"
+            ],
+            "pathExact": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/JsonElementCanonicalEqualityComparer.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/JsonSemanticValueCanonicalizer.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/ExactJsonNumber.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/JsonElementUtility.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/UnicodeCodePointComparer.cs"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "digest",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Determinism.Digests"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/Digests"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "semantics",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Determinism.Semantics"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Determinism/Semantics"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "metadata-coordination",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Metadata"
+            ],
+            "pathExact": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Metadata/ContractMetadataResolver.cs"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "metadata-contracts",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Metadata/Contracts"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "metadata-declarations",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Metadata.Declarations"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Metadata/Declarations"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "metadata-normalization",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Metadata.Normalization"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Metadata/Normalization"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "metadata-validation",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Metadata.Validation"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Metadata/Validation"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "model-coordination",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding"
+            ],
+            "pathExact": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/ContractModelBuilder.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/ContractModelStructure.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/ContractNodeComposer.cs"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "model-contributions",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Contributions"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/Contributions"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "model-definitions",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Definitions"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/Definitions"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "serializer-metadata",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.SerializerMetadata"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/SerializerMetadata"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "type-mappings",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.TypeMappings"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/TypeMappings"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "type-system",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.TypeSystem"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/TypeSystem"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "model-shapes",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Shapes"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/Shapes"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "model-validation",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Validation"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/Validation"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "model-variants",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Variants"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/ModelBuilding/Variants"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "schema-projection",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Projection.JsonSchema"
+            ],
+            "pathExact": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Projection/JsonSchema/JsonSchemaConstraintWriter.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/Projection/JsonSchema/JsonSchemaEmitter.cs",
+              "src/MackySoft.JsonSchema.Generation/Internal/Projection/JsonSchema/JsonSchemaNodeWriter.cs"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "vendor-extensions",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Projection.JsonSchema.VendorExtensions"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Projection/JsonSchema/VendorExtensions"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "type-metadata-projection",
+        "matches": [
+          {
+            "namespaceExact": [
+              "MackySoft.JsonSchema.Generation.Internal.Projection.TypeMetadata"
+            ],
+            "pathPrefix": [
+              "src/MackySoft.JsonSchema.Generation/Internal/Projection/TypeMetadata"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "reflection",
+        "matches": [
+          {
+            "namespacePrefix": [
+              "System.Reflection"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "serializer-contract-metadata",
+        "matches": [
+          {
+            "namespacePrefix": [
+              "System.Text.Json.Serialization"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "platform",
+        "matches": [
+          {
+            "namespacePrefix": [
+              "System",
+              "Microsoft"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "text-vocabulary",
+        "matches": [
+          {
+            "namespacePrefix": [
+              "MackySoft.Text.Vocabularies"
+            ]
+          },
+          {
+            "pathExact": [
+              "src/MackySoft.Text.Vocabularies/MackySoft.Text.Vocabularies.csproj"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "json-canonicalization",
+        "matches": [
+          {
+            "namespacePrefix": [
+              "MackySoft.Json.Canonicalization"
+            ]
+          },
+          {
+            "pathExact": [
+              "src/MackySoft.Json.Canonicalization/MackySoft.Json.Canonicalization.csproj"
+            ]
+          }
+        ]
+      }
+    ],
+    "layer": []
+  },
+  "policies": {
+    "dependencies": [
+      {
+        "from": {
+          "subject": "owned"
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "$same"
+            ]
+          },
+          {
+            "subject": "external",
+            "domain": [
+              "platform"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "package-family"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "external",
+            "domain": [
+              "json-canonicalization",
+              "text-vocabulary"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "annotations"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "common"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "contract-model"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "common",
+              "determinism"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "diagnostics"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "common",
+              "metadata-api"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "extensibility"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "common",
+              "contract-model",
+              "determinism",
+              "metadata-api"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "metadata-api"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "common"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "common"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "determinism"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "digest"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "configuration",
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "extensibility",
+              "semantics"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "semantics"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "metadata-coordination"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "extensibility",
+              "metadata-contracts",
+              "metadata-declarations",
+              "metadata-validation"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "metadata-declarations"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "annotations",
+              "contract-model",
+              "determinism",
+              "extensibility",
+              "metadata-api",
+              "metadata-contracts",
+              "metadata-normalization"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "metadata-normalization"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "determinism"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "metadata-validation"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "metadata-api",
+              "metadata-contracts",
+              "metadata-declarations",
+              "metadata-normalization"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "model-coordination"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "configuration",
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "extensibility",
+              "metadata-api",
+              "metadata-coordination",
+              "metadata-contracts",
+              "model-definitions",
+              "model-shapes",
+              "model-validation",
+              "model-variants",
+              "serializer-metadata",
+              "type-mappings",
+              "type-system"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "model-contributions"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "extensibility"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "model-definitions"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "serializer-metadata"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "determinism",
+              "diagnostics"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "type-mappings"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "extensibility",
+              "model-shapes",
+              "type-system"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "type-system"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "model-shapes"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "model-validation"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "metadata-api",
+              "metadata-contracts",
+              "model-shapes"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "model-variants"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "metadata-api",
+              "metadata-contracts",
+              "model-shapes",
+              "model-validation"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "model-shapes"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "schema-projection"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "configuration",
+              "contract-model",
+              "extensibility",
+              "projection-api",
+              "vendor-extensions"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "vendor-extensions"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "extensibility"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "type-metadata-projection"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "contract-model",
+              "projection-api",
+              "semantics"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "api"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "configuration",
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "digest",
+              "extensibility",
+              "model-contributions",
+              "model-coordination",
+              "projection-api",
+              "schema-projection",
+              "type-metadata-projection"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "metadata-contracts"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "owned",
+            "domain": [
+              "common",
+              "contract-model",
+              "determinism",
+              "diagnostics",
+              "metadata-api"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "contract-model",
+            "extensibility",
+            "metadata-api",
+            "metadata-coordination",
+            "metadata-declarations",
+            "model-coordination",
+            "serializer-metadata",
+            "type-mappings",
+            "type-system"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "external",
+            "domain": [
+              "reflection"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "api",
+            "extensibility",
+            "model-coordination",
+            "model-variants",
+            "serializer-metadata",
+            "type-mappings",
+            "type-system"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "external",
+            "domain": [
+              "serializer-contract-metadata"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "configuration",
+            "digest",
+            "extensibility",
+            "metadata-contracts",
+            "metadata-declarations",
+            "metadata-validation",
+            "projection-api",
+            "schema-projection",
+            "semantics",
+            "type-system"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "external",
+            "domain": [
+              "text-vocabulary"
+            ]
+          }
+        ]
+      },
+      {
+        "from": {
+          "subject": "owned",
+          "domain": [
+            "determinism",
+            "digest"
+          ]
+        },
+        "allow": [
+          {
+            "subject": "external",
+            "domain": [
+              "json-canonicalization"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "coverage": {
+    "ownedSubjectsMustClassify": [
+      "domain"
+    ],
+    "localSubjectsMustBeOwned": [
+      {
+        "matches": [
+          {
+            "projectExact": [
+              "src/MackySoft.JsonSchema.Generation/MackySoft.JsonSchema.Generation.csproj"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "thresholds": {}
+}

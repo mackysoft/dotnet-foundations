@@ -34,6 +34,21 @@ resolve_package_family() {
         "src/MackySoft.Json.Canonicalization/MackySoft.Json.Canonicalization.csproj"
       )
       ;;
+    json-schema-generation)
+      package_family_name="json-schema-generation"
+      package_family_version="$(
+        sed -nE 's#.*<JsonSchemaGenerationVersion[^>]*>([^<]+)</JsonSchemaGenerationVersion>.*#\1#p' \
+          "${repository_root}/eng/package-families/json-schema-generation.props" |
+          head -n 1
+      )"
+      package_family_version_property="JsonSchemaGenerationVersion"
+      package_family_ids=(
+        "MackySoft.JsonSchema.Generation"
+      )
+      package_family_projects=(
+        "src/MackySoft.JsonSchema.Generation/MackySoft.JsonSchema.Generation.csproj"
+      )
+      ;;
     text-vocabularies)
       package_family_name="text-vocabularies"
       package_family_version="$(
