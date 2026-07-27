@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="../../eng/package-families/json-schema-generation.props" />
+  <Import Project="../../eng/package-families/json-canonicalization.props" />
+  <Import Project="../../eng/package-families/text-vocabularies.props" />
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>MackySoft.JsonSchema.Generation</AssemblyName>
+    <RootNamespace>MackySoft.JsonSchema.Generation</RootNamespace>
+    <LangVersion>12.0</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <PackageId>MackySoft.JsonSchema.Generation</PackageId>
+    <Version>$(JsonSchemaGenerationVersion)</Version>
+    <PackageVersion>$(JsonSchemaGenerationVersion)</PackageVersion>
+    <Description>Product-independent JSON Contract Model, JSON Schema Draft 2020-12, and type metadata generation for .NET.</Description>
+    <PackageTags>json;json-schema;contract;generation;draft-2020-12</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../MackySoft.Json.Canonicalization/MackySoft.Json.Canonicalization.csproj">
+      <Version>$(JsonCanonicalizationVersion)</Version>
+    </ProjectReference>
+    <ProjectReference Include="../MackySoft.Text.Vocabularies/MackySoft.Text.Vocabularies.csproj">
+      <Version>$(TextVocabulariesVersion)</Version>
+    </ProjectReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../LICENSE" Pack="true" PackagePath="" Link="LICENSE" />
+    <None Update="README.md" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+</Project>
