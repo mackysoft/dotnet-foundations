@@ -10,6 +10,7 @@ on:
         options:
           - filesystem
           - json-canonicalization
+          - json-schema-generation
           - text-vocabularies
       version:
         description: Package family version
