@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
-using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Projection;
 
@@ -119,27 +119,27 @@ public sealed class AnnotationProjectionTests
                 .GetInt32());
     }
 
-    [Contract.Title("Annotated contract")]
-    [Contract.Description("Exercises shared annotations.")]
-    [Contract.Example("""{"mode":"fast","revision":3,"items":[1]}""")]
-    [Contract.PropertyCount(1, 3)]
+    [Title("Annotated contract")]
+    [Description("Exercises shared annotations.")]
+    [Example("""{"mode":"fast","revision":3,"items":[1]}""")]
+    [PropertyCount(1, 3)]
     private sealed class AnnotatedContract
     {
-        [Contract.Description("Execution mode.")]
-        [Contract.Example("\"fast\"")]
-        [Contract.Enum("\"fast\"", "\"safe\"")]
-        [Contract.Length(2, 8)]
-        [Contract.Pattern("^[a-z]+$")]
+        [Description("Execution mode.")]
+        [Example("\"fast\"")]
+        [Enum("\"fast\"", "\"safe\"")]
+        [Length(2, 8)]
+        [Pattern("^[a-z]+$")]
         public string Mode { get; set; } = string.Empty;
 
-        [Contract.Const("3")]
-        [Contract.Range(
+        [Const("3")]
+        [Range(
             "0",
             "10",
             ExclusiveMinimum = true)]
         public int Revision { get; set; }
 
-        [Contract.ItemCount(1, 3)]
+        [ItemCount(1, 3)]
         public int[] Items { get; set; } = Array.Empty<int>();
     }
 }

@@ -1,8 +1,8 @@
+using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
-using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
 
@@ -53,7 +53,7 @@ public sealed class PatternContractTests
 
     private sealed class PortablePatternContract
     {
-        [Contract.Pattern("^[A-Za-z0-9._:/@-]+$")]
+        [Pattern("^[A-Za-z0-9._:/@-]+$")]
         public string Value { get; set; } = string.Empty;
     }
 
