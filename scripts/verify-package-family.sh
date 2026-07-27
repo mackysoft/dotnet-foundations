@@ -421,7 +421,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using MackySoft.JsonSchema.Generation;
-using Contract = MackySoft.JsonSchema.Generation.Annotations;
+using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Extensibility;
@@ -461,7 +461,7 @@ namespace JsonSchemaGenerationPackageConsumer
         public static void Verify()
         {
             foreach (Type exportedType in
-                typeof(Contract.DescriptionAttribute).Assembly.GetExportedTypes())
+                typeof(DescriptionAttribute).Assembly.GetExportedTypes())
             {
                 if (typeof(Attribute).IsAssignableFrom(exportedType)
                     && exportedType.Name.StartsWith(
@@ -540,7 +540,7 @@ namespace JsonSchemaGenerationPackageConsumer
 
     public sealed class ExampleContract
     {
-        [Contract.Description("Package consumer value.")]
+        [Description("Package consumer value.")]
         public string Value { get; set; } = string.Empty;
     }
 

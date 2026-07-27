@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
@@ -8,7 +9,6 @@ using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Projection;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
-using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
 
@@ -694,37 +694,37 @@ public sealed class SystemTextJsonAuthorityTests
 
     private sealed class InvalidCharacterConstantContract
     {
-        [Contract.Const("\"ab\"")]
+        [Const("\"ab\"")]
         public char Value { get; set; }
     }
 
     private sealed class InvalidGuidConstantContract
     {
-        [Contract.Const("\"not-a-guid\"")]
+        [Const("\"not-a-guid\"")]
         public Guid Value { get; set; }
     }
 
     private sealed class InvalidDateTimeConstantContract
     {
-        [Contract.Const("\"not-a-date-time\"")]
+        [Const("\"not-a-date-time\"")]
         public DateTime Value { get; set; }
     }
 
     private sealed class ValidGuidConstantContract
     {
-        [Contract.Const("\"00000000-0000-0000-0000-000000000000\"")]
+        [Const("\"00000000-0000-0000-0000-000000000000\"")]
         public Guid Value { get; set; }
     }
 
     private sealed class ArbitraryScalarContract
     {
-        [Contract.AnyValue]
+        [AnyValue]
         public int Value { get; set; }
     }
 
     private sealed class ArbitraryObjectContract
     {
-        [Contract.AnyValue]
+        [AnyValue]
         public KnownObject Value { get; set; } = new();
     }
 
@@ -735,7 +735,7 @@ public sealed class SystemTextJsonAuthorityTests
 
     private sealed class ArbitraryUnknownConverterContract
     {
-        [Contract.AnyValue]
+        [AnyValue]
         [JsonConverter(typeof(UnknownValueConverter))]
         public UnknownValue Value { get; set; }
     }

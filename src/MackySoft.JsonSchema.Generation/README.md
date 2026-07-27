@@ -84,24 +84,23 @@ root accepts JSON `null`; it does not make a non-nullable serialized member of
 that type nullable.
 
 The attributes are declared in
-`MackySoft.JsonSchema.Generation.Annotations`. A namespace alias keeps their
-contract context explicit and avoids collisions with framework attributes:
+`MackySoft.JsonSchema.Generation.Annotations`:
 
 ```csharp
 using System.Text.Json.Serialization;
-using Contract = MackySoft.JsonSchema.Generation.Annotations;
+using MackySoft.JsonSchema.Generation.Annotations;
 
 sealed class WidgetContract
 {
     [JsonRequired]
-    [Contract.Required]
-    [Contract.Description("The stable widget name.")]
+    [Required]
+    [Description("The stable widget name.")]
     public string Name { get; set; } = string.Empty;
 }
 ```
 
-Version 0.2.0 removes the 0.1.0 `JsonContract*Attribute` type names. It does
-not provide compatibility aliases; consumers must use the names listed above.
+Version 0.2.0 exposes only the attribute names listed above; the 0.1.0
+`JsonContract*Attribute` types were removed.
 Attribute-backed diagnostic source IDs therefore use the new fully qualified
 attribute type names.
 

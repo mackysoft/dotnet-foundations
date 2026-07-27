@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
-using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Extensibility;
 
@@ -172,12 +172,12 @@ public sealed class ModelContributorTests
         public int Value { get; set; }
     }
 
-    [Contract.Discriminator(nameof(Kind))]
-    [Contract.OneOfBranch(
+    [Discriminator(nameof(Kind))]
+    [OneOfBranch(
         "count",
         nameof(Count),
         DiscriminatorValueJson = "\"count\"")]
-    [Contract.OneOfBranch(
+    [OneOfBranch(
         "nested",
         nameof(Nested),
         DiscriminatorValueJson = "\"nested\"")]
