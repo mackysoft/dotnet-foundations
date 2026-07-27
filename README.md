@@ -10,7 +10,7 @@ This repository owns product-independent .NET foundations shared by MackySoft pr
 | --- | --- | --- | --- |
 | `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.1.0` | Guarded lexical path values using current-platform identity rules. |
 | `json-canonicalization` | [`MackySoft.Json.Canonicalization`](src/MackySoft.Json.Canonicalization/README.md) | `0.1.0` | RFC 8785 canonical UTF-8 JSON generation. |
-| `json-schema-generation` | [`MackySoft.JsonSchema.Generation`](src/MackySoft.JsonSchema.Generation/README.md) | `0.1.0` | Deterministic JSON contract modeling, JSON Schema generation, and type-metadata projection. |
+| `json-schema-generation` | [`MackySoft.JsonSchema.Generation`](src/MackySoft.JsonSchema.Generation/README.md) | `0.2.0` | Deterministic JSON contract modeling, JSON Schema generation, and type-metadata projection. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies`](src/MackySoft.Text.Vocabularies/README.md) | `0.1.0` | Finite typed vocabularies with exact canonical text mappings. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies.Json`](src/MackySoft.Text.Vocabularies.Json/README.md) | `0.1.0` | `System.Text.Json` string value and property-name adapters. |
 
@@ -93,12 +93,12 @@ To pack and verify the JSON Schema generation family:
 ```bash
 bash scripts/pack-package-family.sh \
   --family json-schema-generation \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --output artifacts/packages/json-schema-generation
 
 bash scripts/verify-package-family.sh \
   --family json-schema-generation \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --package-dir artifacts/packages/json-schema-generation
 ```
 

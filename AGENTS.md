@@ -78,12 +78,12 @@ bash scripts/verify-package-family.sh \
 
 bash scripts/pack-package-family.sh \
   --family json-schema-generation \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --output artifacts/packages/json-schema-generation
 
 bash scripts/verify-package-family.sh \
   --family json-schema-generation \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --package-dir artifacts/packages/json-schema-generation
 ```
 

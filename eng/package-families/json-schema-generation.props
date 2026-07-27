@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <JsonSchemaGenerationVersion Condition="'$(JsonSchemaGenerationVersion)' == ''">0.1.0</JsonSchemaGenerationVersion>
+    <JsonSchemaGenerationVersion Condition="'$(JsonSchemaGenerationVersion)' == ''">0.2.0</JsonSchemaGenerationVersion>
   </PropertyGroup>
 
 </Project>
