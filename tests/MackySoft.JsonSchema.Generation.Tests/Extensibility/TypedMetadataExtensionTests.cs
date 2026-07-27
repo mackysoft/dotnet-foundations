@@ -59,13 +59,14 @@ public sealed class TypedMetadataExtensionTests
         Assert.Equal("wire_name", propertyInfo.Name);
 
         Assert.Equal("Effective root contract", result.Model.Root.Annotations.Title);
+        JsonContractNode wireName = GenerationTestHarness
+            .GetProperty(result.Model.Root, "wire_name")
+            .Value;
         Assert.Equal(
             "Consumer-owned description",
-            GenerationTestHarness
-                .GetProperty(result.Model.Root, "wire_name")
-                .Value
-                .Annotations
-                .Description);
+            wireName.Annotations.Description);
+        Assert.Equal(2, wireName.Constraints.MinimumLength);
+        Assert.Equal(32, wireName.Constraints.MaximumLength);
         Assert.Null(
             GenerationTestHarness
                 .GetProperty(result.Model.Root, "revision")
@@ -351,6 +352,8 @@ public sealed class TypedMetadataExtensionTests
         {
             contexts.Add(context);
             builder.SetDescription(attribute.Description);
+            builder.SetMinimumLength(2);
+            builder.SetMaximumLength(32);
         }
     }
 

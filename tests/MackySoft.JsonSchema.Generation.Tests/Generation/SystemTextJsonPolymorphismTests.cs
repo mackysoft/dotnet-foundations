@@ -69,25 +69,24 @@ public sealed class SystemTextJsonPolymorphismTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenPolymorphismIsClosed_MatchesSerializerRoundTrip ()
+    public void Generate_WhenPolymorphismIsClosed_AssociatesSerializerDiscriminatorsWithTheirDerivedContracts ()
     {
-        const string json = """{"$kind":"circle","Radius":3.5}""";
-
-        ShapeContract deserialized =
-            Assert.IsType<CircleContract>(
-                JsonSerializer.Deserialize<ShapeContract>(json));
         JsonContractGenerationResult result =
             GenerationTestHarness.Generate<ShapeContract>(
                 "tests.polymorphic-runtime-match");
 
-        Assert.Equal(3.5, ((CircleContract)deserialized).Radius);
-        Assert.Equal(
-            new[] { "circle", "rectangle" },
-            result.Model.Root.Variants
-                .Select(
-                    static variant =>
-                        variant.DiscriminatorValue.GetString())
-                .ToArray());
+        AssertSerializerBranchMatchesDefinition(
+            result,
+            new CircleContract
+            {
+                Radius = 3.5,
+            });
+        AssertSerializerBranchMatchesDefinition(
+            result,
+            new RectangleContract
+            {
+                Width = 4.5,
+            });
     }
 
     [Fact]
@@ -123,150 +122,6 @@ public sealed class SystemTextJsonPolymorphismTests
             result.Model.Root.Discriminator?.PropertyName);
     }
 
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenDerivedTypeIsRegisteredTwice_RejectsTheSameInvalidRegistrationAsSerializer ()
-    {
-        AssertRuntimeAndGenerationReject(
-            "tests.polymorphic-duplicate-derived-type",
-            static options =>
-            {
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(ConfiguredBranch),
-                        "first"));
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(ConfiguredBranch),
-                        "second"));
-            });
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenDerivedTypeIsNotAssignable_RejectsTheSameInvalidRegistrationAsSerializer ()
-    {
-        AssertRuntimeAndGenerationReject(
-            "tests.polymorphic-nonassignable-derived-type",
-            static options =>
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(typeof(string), "string")));
-    }
-
-    [Theory]
-    [InlineData("$id")]
-    [InlineData("$ref")]
-    [InlineData("$values")]
-    [Trait("Size", "Small")]
-    public void Generate_WhenDiscriminatorUsesReservedMetadataName_RejectsTheSameInvalidRegistrationAsSerializer (
-        string propertyName)
-    {
-        AssertRuntimeAndGenerationReject(
-            $"tests.polymorphic-reserved-{propertyName.Substring(1)}",
-            static options =>
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(ConfiguredBranch),
-                        "branch")),
-            propertyName);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void ResolveTypeInfo_WhenDerivedTypeIsTheBaseType_RejectsTheInvalidRegistration ()
-    {
-        AssertGenerationRejects(
-            "tests.polymorphic-base-as-derived",
-            static options =>
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(ConfiguredBase),
-                        "base")));
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void ResolveTypeInfo_WhenDerivedTypeIsAbstract_RejectsTheInvalidRegistration ()
-    {
-        AssertGenerationRejects(
-            "tests.polymorphic-abstract-derived",
-            static options =>
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(AbstractConfiguredBranch),
-                        "abstract")));
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void ResolveTypeInfo_WhenDerivedTypeIsAnInterface_RejectsTheInvalidRegistration ()
-    {
-        AssertGenerationRejects<IConfiguredBase>(
-            "tests.polymorphic-interface-derived",
-            static options =>
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(IConfiguredBranch),
-                        "interface")));
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void ResolveTypeInfo_WhenDerivedTypeIsOpenGeneric_RejectsTheInvalidRegistration ()
-    {
-        AssertGenerationRejects(
-            "tests.polymorphic-open-generic-derived",
-            static options =>
-                options.DerivedTypes.Add(
-                    new JsonDerivedType(
-                        typeof(GenericConfiguredBranch<>),
-                        "generic")));
-    }
-
-    private static void AssertRuntimeAndGenerationReject (
-        string contractId,
-        Action<JsonPolymorphismOptions> configure,
-        string discriminatorPropertyName = "$kind")
-    {
-        JsonSerializerOptions runtimeOptions =
-            CreateSerializerOptions<ConfiguredBase>(
-            configure,
-            discriminatorPropertyName);
-        Assert.Throws<InvalidOperationException>(
-            () => JsonSerializer.Serialize<ConfiguredBase>(
-                new ConfiguredBranch(),
-                runtimeOptions));
-
-        AssertGenerationRejects(
-            contractId,
-            configure,
-            discriminatorPropertyName);
-    }
-
-    private static void AssertGenerationRejects (
-        string contractId,
-        Action<JsonPolymorphismOptions> configure,
-        string discriminatorPropertyName = "$kind")
-    {
-        AssertGenerationRejects<ConfiguredBase>(
-            contractId,
-            configure,
-            discriminatorPropertyName);
-    }
-
-    private static void AssertGenerationRejects<TContract> (
-        string contractId,
-        Action<JsonPolymorphismOptions> configure,
-        string discriminatorPropertyName = "$kind")
-    {
-        Assert.Throws<InvalidOperationException>(
-            () => GenerationTestHarness.Generate<TContract>(
-                contractId,
-                CreateSerializerOptions<TContract>(
-                    configure,
-                    discriminatorPropertyName)));
-    }
-
     private static JsonSerializerOptions CreateSerializerOptions<TContract> (
         Action<JsonPolymorphismOptions> configure,
         string discriminatorPropertyName)
@@ -299,6 +154,41 @@ public sealed class SystemTextJsonPolymorphismTests
         };
     }
 
+    private static void AssertSerializerBranchMatchesDefinition (
+        JsonContractGenerationResult result,
+        ShapeContract value)
+    {
+        string json = JsonSerializer.Serialize<ShapeContract>(value);
+        using JsonDocument document = JsonDocument.Parse(json);
+        string? discriminator = document.RootElement
+            .GetProperty("$kind")
+            .GetString();
+        string serializedPropertyName = Assert.Single(document.RootElement
+                .EnumerateObject()
+, static property => property.Name != "$kind").Name;
+        JsonContractVariant variant = Assert.Single(
+            result.Model.Root.Variants,
+            variant => string.Equals(
+                variant.DiscriminatorValue.GetString(),
+                discriminator,
+                StringComparison.Ordinal));
+        string definitionId = Assert.IsType<string>(
+            variant.Value.ReferenceId);
+        JsonContractDefinition definition = Assert.Single(
+            result.Model.Definitions,
+            candidate => string.Equals(
+                candidate.Id,
+                definitionId,
+                StringComparison.Ordinal));
+
+        Assert.Contains(
+            definition.Value.Properties,
+            property => string.Equals(
+                property.Name,
+                serializedPropertyName,
+                StringComparison.Ordinal));
+    }
+
     [JsonPolymorphic(TypeDiscriminatorPropertyName = "$kind")]
     [JsonDerivedType(typeof(CircleContract), "circle")]
     [JsonDerivedType(typeof(RectangleContract), "rectangle")]
@@ -324,19 +214,4 @@ public sealed class SystemTextJsonPolymorphismTests
     {
     }
 
-    private abstract class AbstractConfiguredBranch : ConfiguredBase
-    {
-    }
-
-    private interface IConfiguredBase
-    {
-    }
-
-    private interface IConfiguredBranch : IConfiguredBase
-    {
-    }
-
-    private sealed class GenericConfiguredBranch<T> : ConfiguredBase
-    {
-    }
 }

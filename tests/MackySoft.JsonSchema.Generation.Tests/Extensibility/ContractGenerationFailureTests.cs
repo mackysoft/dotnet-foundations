@@ -32,6 +32,43 @@ public sealed class ContractGenerationFailureTests
 
     [Fact]
     [Trait("Size", "Small")]
+    public void Generate_WhenTypeMapperInspectionThrows_ReportsMapperFailure ()
+    {
+        const string MapperId = "tests.mapper.throwing-inspection";
+        var mapper = new TestTypeMapper(
+            MapperId,
+            static context =>
+            {
+                if (context.TypeInfo.Type == typeof(OpaqueValue))
+                {
+                    throw new InvalidOperationException(
+                        "Inspection failed.");
+                }
+
+                return false;
+            },
+            static _ => throw new InvalidOperationException(
+                "A mapper that failed inspection must not map."));
+
+        JsonContractGenerationException exception =
+            Assert.Throws<JsonContractGenerationException>(
+                () => GenerationTestHarness.Generate<OpaqueContract>(
+                    "tests.mapper-throwing-inspection",
+                    OpaqueSerializerOptions(),
+                    typeMappers: new[] { mapper }));
+
+        Assert.Equal(
+            JsonContractGenerationFailureKind.UnsupportedConverter,
+            exception.FailureKind);
+        Assert.Equal(typeof(OpaqueValue), exception.TargetType);
+        Assert.Equal("Value", exception.JsonPropertyName);
+        Assert.Equal(new[] { MapperId }, exception.SourceIds);
+        Assert.IsType<InvalidOperationException>(
+            exception.InnerException);
+    }
+
+    [Fact]
+    [Trait("Size", "Small")]
     public void Generate_WhenMetadataSourcesDisagree_ReportsBothSources ()
     {
         var alpha = DescriptionProvider(

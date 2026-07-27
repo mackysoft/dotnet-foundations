@@ -39,6 +39,30 @@ public sealed class ExactMetadataNumberTests
 
     [Fact]
     [Trait("Size", "Small")]
+    public void Generate_AdjacentUInt64Bounds_HaveDistinctSchemaBytesAndDigests ()
+    {
+        JsonContractGenerationResult lower = Generate(
+            static builder => builder.SetMaximum(
+                JsonContractNumber.FromUInt64(ulong.MaxValue - 1)));
+        JsonContractGenerationResult upper = Generate(
+            static builder => builder.SetMaximum(
+                JsonContractNumber.FromUInt64(ulong.MaxValue)));
+
+        Assert.Equal(
+            "18446744073709551614",
+            GetSchemaKeyword(lower, "maximum").GetRawText());
+        Assert.Equal(
+            "18446744073709551615",
+            GetSchemaKeyword(upper, "maximum").GetRawText());
+        Assert.NotEqual(lower.ContractDigest, upper.ContractDigest);
+        Assert.False(
+            lower
+                .GetJsonSchemaUtf8()
+                .SequenceEqual(upper.GetJsonSchemaUtf8()));
+    }
+
+    [Fact]
+    [Trait("Size", "Small")]
     public void Generate_EquivalentDecimalScaleBounds_HaveIdenticalSchemaBytesAndDigests ()
     {
         JsonContractGenerationResult decimalScale = Generate(
