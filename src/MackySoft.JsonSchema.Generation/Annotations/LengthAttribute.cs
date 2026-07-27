@@ -1,19 +1,19 @@
 namespace MackySoft.JsonSchema.Generation.Annotations;
 
-/// <summary> Declares inclusive item-count bounds for an array value. </summary>
+/// <summary> Declares inclusive string-length bounds. </summary>
 [AttributeUsage(
     AttributeTargets.Property
     | AttributeTargets.Field
     | AttributeTargets.Class
     | AttributeTargets.Struct,
     Inherited = true)]
-public sealed class JsonContractItemCountAttribute : Attribute
+public sealed class LengthAttribute : Attribute
 {
-    /// <summary> Initializes an array item-count declaration. </summary>
-    /// <param name="minimum"> The non-negative minimum item count. </param>
-    /// <param name="maximum"> The maximum count, which must not be less than <paramref name="minimum" />. </param>
+    /// <summary> Initializes a string-length declaration. </summary>
+    /// <param name="minimum"> The non-negative minimum length. </param>
+    /// <param name="maximum"> The maximum length, which must not be less than <paramref name="minimum" />. </param>
     /// <exception cref="ArgumentOutOfRangeException"> A bound is negative or the bounds are reversed. </exception>
-    public JsonContractItemCountAttribute (
+    public LengthAttribute (
         int minimum,
         int maximum)
     {
@@ -22,7 +22,7 @@ public sealed class JsonContractItemCountAttribute : Attribute
             throw new ArgumentOutOfRangeException(
                 nameof(minimum),
                 minimum,
-                "The minimum item count must be non-negative.");
+                "The minimum length must be non-negative.");
         }
 
         if (maximum < minimum)
@@ -30,16 +30,16 @@ public sealed class JsonContractItemCountAttribute : Attribute
             throw new ArgumentOutOfRangeException(
                 nameof(maximum),
                 maximum,
-                "The maximum item count must not be less than the minimum item count.");
+                "The maximum length must not be less than the minimum length.");
         }
 
         Minimum = minimum;
         Maximum = maximum;
     }
 
-    /// <summary> Gets the inclusive minimum item count. </summary>
+    /// <summary> Gets the inclusive minimum string length. </summary>
     public int Minimum { get; }
 
-    /// <summary> Gets the inclusive maximum item count. </summary>
+    /// <summary> Gets the inclusive maximum string length. </summary>
     public int Maximum { get; }
 }

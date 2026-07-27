@@ -421,7 +421,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using MackySoft.JsonSchema.Generation;
-using MackySoft.JsonSchema.Generation.Annotations;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Extensibility;
@@ -460,6 +460,19 @@ namespace JsonSchemaGenerationPackageConsumer
 
         public static void Verify()
         {
+            foreach (Type exportedType in
+                typeof(Contract.DescriptionAttribute).Assembly.GetExportedTypes())
+            {
+                if (typeof(Attribute).IsAssignableFrom(exportedType)
+                    && exportedType.Name.StartsWith(
+                        "JsonContract",
+                        StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        "Package consumer found a prefixed compatibility attribute.");
+                }
+            }
+
             JsonContractGenerationResult result = Generate();
             byte[] schemaUtf8 = result.GetJsonSchemaUtf8();
             byte[] metadataUtf8 = result.GetTypeMetadataUtf8();
@@ -527,7 +540,7 @@ namespace JsonSchemaGenerationPackageConsumer
 
     public sealed class ExampleContract
     {
-        [JsonContractDescription("Package consumer value.")]
+        [Contract.Description("Package consumer value.")]
         public string Value { get; set; } = string.Empty;
     }
 

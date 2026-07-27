@@ -11,6 +11,6 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
 [AttributeUsage(
     AttributeTargets.Property | AttributeTargets.Field,
     Inherited = true)]
-public sealed class JsonContractRequiredAttribute : Attribute
+public sealed class RequiredAttribute : Attribute
 {
 }

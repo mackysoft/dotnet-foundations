@@ -18,6 +18,6 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Property
     | AttributeTargets.Field,
     Inherited = true)]
-public sealed class JsonContractAllowNullAttribute : Attribute
+public sealed class AllowNullAttribute : Attribute
 {
 }

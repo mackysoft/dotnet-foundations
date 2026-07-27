@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
@@ -9,6 +8,7 @@ using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Projection;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
 
@@ -694,37 +694,37 @@ public sealed class SystemTextJsonAuthorityTests
 
     private sealed class InvalidCharacterConstantContract
     {
-        [JsonContractConst("\"ab\"")]
+        [Contract.Const("\"ab\"")]
         public char Value { get; set; }
     }
 
     private sealed class InvalidGuidConstantContract
     {
-        [JsonContractConst("\"not-a-guid\"")]
+        [Contract.Const("\"not-a-guid\"")]
         public Guid Value { get; set; }
     }
 
     private sealed class InvalidDateTimeConstantContract
     {
-        [JsonContractConst("\"not-a-date-time\"")]
+        [Contract.Const("\"not-a-date-time\"")]
         public DateTime Value { get; set; }
     }
 
     private sealed class ValidGuidConstantContract
     {
-        [JsonContractConst("\"00000000-0000-0000-0000-000000000000\"")]
+        [Contract.Const("\"00000000-0000-0000-0000-000000000000\"")]
         public Guid Value { get; set; }
     }
 
     private sealed class ArbitraryScalarContract
     {
-        [JsonContractAnyValue]
+        [Contract.AnyValue]
         public int Value { get; set; }
     }
 
     private sealed class ArbitraryObjectContract
     {
-        [JsonContractAnyValue]
+        [Contract.AnyValue]
         public KnownObject Value { get; set; } = new();
     }
 
@@ -735,7 +735,7 @@ public sealed class SystemTextJsonAuthorityTests
 
     private sealed class ArbitraryUnknownConverterContract
     {
-        [JsonContractAnyValue]
+        [Contract.AnyValue]
         [JsonConverter(typeof(UnknownValueConverter))]
         public UnknownValue Value { get; set; }
     }

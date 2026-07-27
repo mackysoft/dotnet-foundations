@@ -2,10 +2,10 @@ using System.Collections;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Extensibility;
 
@@ -418,16 +418,16 @@ public sealed class DocumentPostProcessorTests
                 });
     }
 
-    [JsonContractExample(
+    [Contract.Example(
         """{"Mode":"fast","Revision":3,"Items":[1],"Nested":{"Value":1}}""")]
-    [JsonContractOneOfBranch("revision", "Revision")]
-    [JsonContractOneOfBranch("mode", "Mode")]
+    [Contract.OneOfBranch("revision", "Revision")]
+    [Contract.OneOfBranch("mode", "Mode")]
     private sealed class StructuredContract
     {
-        [JsonContractEnum("\"fast\"", "\"safe\"")]
+        [Contract.Enum("\"fast\"", "\"safe\"")]
         public string Mode { get; set; } = string.Empty;
 
-        [JsonContractConst("3")]
+        [Contract.Const("3")]
         public int Revision { get; set; }
 
         public int[] Items { get; set; } = Array.Empty<int>();

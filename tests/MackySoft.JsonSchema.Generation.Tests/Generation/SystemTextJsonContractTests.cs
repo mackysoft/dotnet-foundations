@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
 
@@ -353,14 +353,14 @@ public sealed class SystemTextJsonContractTests
 
     private sealed class SerializerContract
     {
-        [JsonContractAllowNull]
+        [Contract.AllowNull]
         public string? OptionalDisplayName { get; set; }
 
         [JsonRequired]
         public string ServerName { get; set; } = string.Empty;
 
         [JsonRequired]
-        [JsonContractRequired]
+        [Contract.Required]
         [JsonPropertyName("wire_id")]
         public int WireIdentifier { get; set; }
 
@@ -370,17 +370,17 @@ public sealed class SystemTextJsonContractTests
 
     private sealed class RequiredMetadataConflictContract
     {
-        [JsonContractRequired]
+        [Contract.Required]
         public int Value { get; set; }
     }
 
     private sealed class NullMetadataConflictContract
     {
-        [JsonContractAllowNull]
+        [Contract.AllowNull]
         public string Value { get; set; } = string.Empty;
     }
 
-    [JsonContractAllowNull]
+    [Contract.AllowNull]
     private sealed class NullableRootContract
     {
         public int Value { get; set; }
@@ -452,13 +452,13 @@ public sealed class SystemTextJsonContractTests
 
     private sealed class NarrowIntegerContract
     {
-        [JsonContractRange("1", "254")]
+        [Contract.Range("1", "254")]
         public byte Value { get; set; }
     }
 
     private sealed class WidenedIntegerContract
     {
-        [JsonContractRange("-1", "255")]
+        [Contract.Range("-1", "255")]
         public byte Value { get; set; }
     }
 }

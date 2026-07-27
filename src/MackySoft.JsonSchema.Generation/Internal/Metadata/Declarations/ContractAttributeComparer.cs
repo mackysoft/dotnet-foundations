@@ -47,56 +47,56 @@ internal sealed class ContractAttributeComparer : IComparer<Attribute>
         var key = new StringBuilder();
         switch (attribute)
         {
-            case JsonContractTitleAttribute title:
+            case TitleAttribute title:
                 AppendKeyPart(key, title.Title);
                 break;
 
-            case JsonContractDescriptionAttribute description:
+            case DescriptionAttribute description:
                 AppendKeyPart(key, description.Description);
                 break;
 
-            case JsonContractExampleAttribute example:
+            case ExampleAttribute example:
                 AppendKeyPart(key, example.Json);
                 break;
 
-            case JsonContractConstAttribute constant:
+            case ConstAttribute constant:
                 AppendKeyPart(key, constant.Json);
                 break;
 
-            case JsonContractEnumAttribute finiteSet:
+            case EnumAttribute finiteSet:
                 foreach (string value in finiteSet.JsonValues)
                 {
                     AppendKeyPart(key, value);
                 }
                 break;
 
-            case JsonContractRangeAttribute range:
+            case RangeAttribute range:
                 AppendKeyPart(key, range.MinimumJson);
                 AppendKeyPart(key, range.MaximumJson);
                 key.Append(range.ExclusiveMinimum ? '1' : '0');
                 key.Append(range.ExclusiveMaximum ? '1' : '0');
                 break;
 
-            case JsonContractLengthAttribute length:
+            case LengthAttribute length:
                 AppendKeyPart(key, length.Minimum);
                 AppendKeyPart(key, length.Maximum);
                 break;
 
-            case JsonContractPatternAttribute pattern:
+            case PatternAttribute pattern:
                 AppendKeyPart(key, pattern.Pattern);
                 break;
 
-            case JsonContractItemCountAttribute itemCount:
+            case ItemCountAttribute itemCount:
                 AppendKeyPart(key, itemCount.Minimum);
                 AppendKeyPart(key, itemCount.Maximum);
                 break;
 
-            case JsonContractPropertyCountAttribute propertyCount:
+            case PropertyCountAttribute propertyCount:
                 AppendKeyPart(key, propertyCount.Minimum);
                 AppendKeyPart(key, propertyCount.Maximum);
                 break;
 
-            case JsonContractOneOfBranchAttribute branch:
+            case OneOfBranchAttribute branch:
                 AppendKeyPart(key, branch.Name);
                 foreach (string propertyName in branch.RequiredPropertyNames)
                 {
@@ -107,7 +107,7 @@ internal sealed class ContractAttributeComparer : IComparer<Attribute>
                 AppendKeyPart(key, branch.ExampleJson);
                 break;
 
-            case JsonContractDiscriminatorAttribute discriminator:
+            case DiscriminatorAttribute discriminator:
                 AppendKeyPart(key, discriminator.PropertyName);
                 break;
         }

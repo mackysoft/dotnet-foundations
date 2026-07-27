@@ -7,14 +7,14 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface,
     AllowMultiple = true,
     Inherited = true)]
-public sealed class JsonContractOneOfBranchAttribute : Attribute
+public sealed class OneOfBranchAttribute : Attribute
 {
     /// <summary> Initializes a branch declaration. </summary>
     /// <param name="name"> The stable non-empty branch name. </param>
     /// <param name="requiredPropertyNames"> JSON property names whose presence is required by the branch. </param>
     /// <exception cref="ArgumentException"> <paramref name="name" /> is empty or whitespace, or a property name is empty or whitespace. </exception>
     /// <exception cref="ArgumentNullException"> <paramref name="requiredPropertyNames" /> is <see langword="null" />. </exception>
-    public JsonContractOneOfBranchAttribute (
+    public OneOfBranchAttribute (
         string name,
         params string[] requiredPropertyNames)
     {

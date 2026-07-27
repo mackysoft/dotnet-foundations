@@ -14,7 +14,7 @@ internal static class OneOfBranchDeclarationNormalizer
 {
     internal static ResolvedOneOfBranch Normalize (
         MetadataResolutionTarget target,
-        JsonContractOneOfBranchAttribute attribute,
+        OneOfBranchAttribute attribute,
         string sourceId)
     {
         MetadataResolutionTarget typeTarget = ForTypeMetadata(target);

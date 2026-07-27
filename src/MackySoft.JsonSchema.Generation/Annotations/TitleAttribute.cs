@@ -9,12 +9,12 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Property
     | AttributeTargets.Field,
     Inherited = true)]
-public sealed class JsonContractTitleAttribute : Attribute
+public sealed class TitleAttribute : Attribute
 {
     /// <summary> Initializes a title declaration. </summary>
     /// <param name="title"> Non-empty display text. </param>
     /// <exception cref="ArgumentException"> <paramref name="title" /> is empty or whitespace. </exception>
-    public JsonContractTitleAttribute (string title)
+    public TitleAttribute (string title)
     {
         if (string.IsNullOrWhiteSpace(title))
         {

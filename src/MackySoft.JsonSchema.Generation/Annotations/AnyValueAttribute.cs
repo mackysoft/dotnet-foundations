@@ -8,6 +8,6 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Property
     | AttributeTargets.Field,
     Inherited = true)]
-public sealed class JsonContractAnyValueAttribute : Attribute
+public sealed class AnyValueAttribute : Attribute
 {
 }
