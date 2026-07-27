@@ -25,6 +25,16 @@
 - The package forms the independently versioned `json-canonicalization` family. Its initial version is `0.1.0`.
 - Keep hash and digest APIs, product-specific projections and validation, JSON Schema generation, artifact storage, and Unity distribution outside this family.
 
+## JSON Schema generation
+
+- `MackySoft.JsonSchema.Generation` owns the read-only JSON contract model built from .NET DTOs, shared annotations, `System.Text.Json` type information, and explicitly registered extensions.
+- The package deterministically projects that model to JSON Schema Draft 2020-12 and describe-oriented type metadata.
+- The same authoritative input and settings must produce the same normalized model, contract digest, and UTF-8 JSON bytes. Ambiguous converters, conflicting annotations or extensions, and duplicate stable identifiers must produce typed failures instead of inferred behavior.
+- Closed contractual enum-to-string literals must use `MackySoft.Text.Vocabularies`; do not add a package-local manual codec or depend on `MackySoft.Text.Vocabularies.Json`.
+- Public extension points are limited to metadata providers, type mappers, model contributors, and document post-processors that add delivery-specific vendor extensions.
+- Keep uCLI and dotmet concepts, schema placement, manifests, CLI behavior, operation execution semantics, and unrestricted post-processing outside this family.
+- The package forms the independently versioned `json-schema-generation` family. Its initial version is `0.1.0`.
+
 ## Test responsibility
 
 - Automated tests verify observable package behavior and public API contracts.
@@ -65,6 +75,16 @@ bash scripts/verify-package-family.sh \
   --family json-canonicalization \
   --version 0.1.0 \
   --package-dir artifacts/packages/json-canonicalization
+
+bash scripts/pack-package-family.sh \
+  --family json-schema-generation \
+  --version 0.1.0 \
+  --output artifacts/packages/json-schema-generation
+
+bash scripts/verify-package-family.sh \
+  --family json-schema-generation \
+  --version 0.1.0 \
+  --package-dir artifacts/packages/json-schema-generation
 ```
 
 ## Release

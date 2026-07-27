@@ -2,12 +2,14 @@
   <Folder Name="/src/">
     <Project Path="src/MackySoft.FileSystem/MackySoft.FileSystem.csproj" />
     <Project Path="src/MackySoft.Json.Canonicalization/MackySoft.Json.Canonicalization.csproj" />
+    <Project Path="src/MackySoft.JsonSchema.Generation/MackySoft.JsonSchema.Generation.csproj" />
     <Project Path="src/MackySoft.Text.Vocabularies.Json/MackySoft.Text.Vocabularies.Json.csproj" />
     <Project Path="src/MackySoft.Text.Vocabularies/MackySoft.Text.Vocabularies.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/MackySoft.FileSystem.Tests/MackySoft.FileSystem.Tests.csproj" />
     <Project Path="tests/MackySoft.Json.Canonicalization.Tests/MackySoft.Json.Canonicalization.Tests.csproj" />
+    <Project Path="tests/MackySoft.JsonSchema.Generation.Tests/MackySoft.JsonSchema.Generation.Tests.csproj" />
     <Project Path="tests/MackySoft.Text.Vocabularies.Json.Tests/MackySoft.Text.Vocabularies.Json.Tests.csproj" />
     <Project Path="tests/MackySoft.Text.Vocabularies.Tests/MackySoft.Text.Vocabularies.Tests.csproj" />
   </Folder>
