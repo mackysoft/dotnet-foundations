@@ -2,7 +2,6 @@ using System.Text.Json;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Internal.Determinism;
 using MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Validation;
 
@@ -24,18 +23,16 @@ internal static class ContractAnnotationComposer
             contractId,
             targetType,
             jsonPropertyName,
-            JsonContractMetadataKind.Title,
             surrogate?.Title,
             declared?.Title,
-            metadata);
+            metadata?.TitleSourceIds ?? Array.Empty<string>());
         string? description = ResolveText(
             contractId,
             targetType,
             jsonPropertyName,
-            JsonContractMetadataKind.Description,
             surrogate?.Description,
             declared?.Description,
-            metadata);
+            metadata?.DescriptionSourceIds ?? Array.Empty<string>());
 
         JsonElement[] examples = (surrogate?.Examples
                 ?? Array.Empty<JsonElement>())
@@ -56,10 +53,9 @@ internal static class ContractAnnotationComposer
         string contractId,
         Type targetType,
         string? jsonPropertyName,
-        JsonContractMetadataKind metadataKind,
         string? surrogateValue,
         string? declaredValue,
-        ResolvedContractMetadata? metadata)
+        IEnumerable<string> sourceIds)
     {
         if (surrogateValue is null)
         {
@@ -75,17 +71,10 @@ internal static class ContractAnnotationComposer
             return surrogateValue;
         }
 
-        IEnumerable<string> sourceIds = metadata?.MetadataDeclarations
-            .Where(
-                declaration =>
-                    declaration.Metadata.Kind == metadataKind)
-            .Select(static declaration => declaration.SourceId)
-            ?? Array.Empty<string>();
         throw ContractMetadataFailure.Conflicting(
             contractId,
             targetType,
             jsonPropertyName,
-            metadataKind,
             sourceIds,
             "A declaration on the mapped CLR source conflicts with the mapped surrogate annotation.");
     }

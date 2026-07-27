@@ -14,12 +14,14 @@ internal readonly struct ContractNullability
         MemberInfo? member,
         Type declaredType,
         int[] childPath,
-        bool isRoot)
+        bool isRoot,
+        bool rootAcceptsNull)
     {
         Member = member;
         DeclaredType = declaredType;
         this.childPath = childPath;
         IsRoot = isRoot;
+        RootAcceptsNull = rootAcceptsNull;
     }
 
     internal MemberInfo? Member { get; }
@@ -28,13 +30,18 @@ internal readonly struct ContractNullability
 
     internal bool IsRoot { get; }
 
-    internal static ContractNullability Root (Type type)
+    private bool RootAcceptsNull { get; }
+
+    internal static ContractNullability Root (
+        Type type,
+        bool acceptsNull)
     {
         return new ContractNullability(
             member: null,
             type,
             Array.Empty<int>(),
-            isRoot: true);
+            isRoot: true,
+            rootAcceptsNull: acceptsNull);
     }
 
     internal static ContractNullability ForMember (
@@ -45,7 +52,8 @@ internal readonly struct ContractNullability
             member,
             declaredType,
             Array.Empty<int>(),
-            isRoot: false);
+            isRoot: false,
+            rootAcceptsNull: false);
     }
 
     internal ContractNullability Child (Type childType, int genericArgumentIndex)
@@ -56,7 +64,8 @@ internal readonly struct ContractNullability
                 member: null,
                 childType,
                 Array.Empty<int>(),
-                isRoot: false);
+                isRoot: false,
+                rootAcceptsNull: false);
         }
 
         var nestedPath = new int[childPath.Length + 1];
@@ -66,7 +75,8 @@ internal readonly struct ContractNullability
             Member,
             DeclaredType,
             nestedPath,
-            isRoot: false);
+            isRoot: false,
+            rootAcceptsNull: false);
     }
 
     internal NullableContractState ResolveState (Type valueType)
@@ -83,12 +93,14 @@ internal readonly struct ContractNullability
 
         if (IsRoot)
         {
-            return NullableContractState.NotNullable;
+            return RootAcceptsNull
+                ? NullableContractState.Nullable
+                : NullableContractState.NotNullable;
         }
 
         if (Member is null)
         {
-            return NullableContractState.Unknown;
+            return NullableContractState.Nullable;
         }
 
         return NullableMetadataInspector.GetState(

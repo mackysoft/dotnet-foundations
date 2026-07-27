@@ -41,7 +41,7 @@ public sealed class JsonContractGenerationResult
     /// <returns> A new byte array that does not share mutable storage with this result. </returns>
     /// <remarks>
     /// <para>
-    /// In package version 0.2.0 the root object always contains, in order,
+    /// In package version 0.3.0 the root object always contains, in order,
     /// <c>contractId</c>, <c>contractDigest</c>, <c>schemaName</c>, <c>root</c>,
     /// <c>definitions</c>, and <c>contributions</c>.
     /// </para>
@@ -59,9 +59,8 @@ public sealed class JsonContractGenerationResult
     /// </para>
     /// <para>
     /// Property objects contain <c>name</c>, <c>isRequired</c>, and
-    /// <c>value</c>. Variant objects contain <c>name</c>, <c>value</c>,
-    /// <c>requiredProperties</c>, <c>discriminatorValue</c>, and
-    /// <c>annotations</c>. A non-null discriminator object contains
+    /// <c>value</c>. Variant objects contain <c>name</c>, <c>value</c>, and
+    /// <c>discriminatorValue</c>. A non-null discriminator object contains
     /// <c>propertyName</c>. Definition objects contain <c>id</c> and
     /// <c>value</c>. Contribution objects contain <c>targetPointer</c>,
     /// <c>name</c>, <c>value</c>, and <c>sourceId</c>.
@@ -72,8 +71,8 @@ public sealed class JsonContractGenerationResult
     /// corresponding <see cref="JsonContractModel" /> collections.
     /// </para>
     /// <para>
-    /// Version 0.2.0 emits no independent metadata-format version field.
-    /// Consumers pinning exact package version 0.2.0 may depend on this shape;
+    /// Version 0.3.0 emits no independent metadata-format version field.
+    /// Consumers pinning exact package version 0.3.0 may depend on this shape;
     /// compatibility with another package version requires an explicit upgrade
     /// review by the consumer.
     /// </para>

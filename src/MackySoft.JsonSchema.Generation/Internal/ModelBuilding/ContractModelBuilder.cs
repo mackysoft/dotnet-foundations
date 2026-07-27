@@ -16,7 +16,6 @@ using MackySoft.JsonSchema.Generation.Internal.ModelBuilding.TypeMappings;
 using MackySoft.JsonSchema.Generation.Internal.ModelBuilding.TypeSystem;
 using MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Validation;
 using MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Variants;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding;
 
@@ -27,12 +26,12 @@ namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding;
 internal sealed class ContractModelBuilder
 {
     private readonly string contractId;
+    private readonly JsonTypeInfo rootTypeInfo;
     private readonly JsonSerializerOptions serializerOptions;
     private readonly JsonContractGenerationSettings settings;
     private readonly ContractMetadataResolver metadataResolver;
     private readonly BuiltInScalarContractResolver builtInScalarResolver;
     private readonly SerializedObjectContractResolver serializedObjectResolver;
-    private readonly SerializerFiniteValueValidator serializerValueValidator;
     private readonly TypeMappingResolver typeMappingResolver;
     private readonly MappedContractShapeResolver mappedShapeResolver;
     private readonly ContractDefinitionRegistry definitionRegistry = new();
@@ -44,49 +43,71 @@ internal sealed class ContractModelBuilder
 
     internal ContractModelBuilder (
         string contractId,
-        JsonSerializerOptions serializerOptions,
+        JsonTypeInfo rootTypeInfo,
         JsonContractGenerationSettings settings,
-        IReadOnlyList<IJsonContractMetadataProvider> metadataProviders,
+        IReadOnlyList<MetadataExtensionRegistration> metadataExtensions,
         IReadOnlyList<IJsonContractTypeMapper> typeMappers)
     {
         this.contractId = contractId
             ?? throw new ArgumentNullException(nameof(contractId));
-        this.serializerOptions = serializerOptions
-            ?? throw new ArgumentNullException(nameof(serializerOptions));
-        this.serializerOptions.MakeReadOnly();
+        this.rootTypeInfo = rootTypeInfo
+            ?? throw new ArgumentNullException(nameof(rootTypeInfo));
+        serializerOptions = rootTypeInfo.Options;
         this.settings = settings
             ?? throw new ArgumentNullException(nameof(settings));
-        metadataResolver = new ContractMetadataResolver(
-            metadataProviders
-                ?? throw new ArgumentNullException(nameof(metadataProviders)));
-        builtInScalarResolver = new BuiltInScalarContractResolver(
-            contractId,
-            serializerOptions);
-        serializedObjectResolver = new SerializedObjectContractResolver(
-            contractId,
-            serializerOptions,
-            settings.ObjectClosure
-                == JsonObjectClosure.AllowAdditionalProperties);
-        serializerValueValidator = new SerializerFiniteValueValidator(
-            serializerOptions);
-        typeMappingResolver = new TypeMappingResolver(
-            contractId,
-            serializerOptions,
-            typeMappers
-                ?? throw new ArgumentNullException(nameof(typeMappers)));
-        mappedShapeResolver = new MappedContractShapeResolver(contractId);
         polymorphismResolver = new SystemTextJsonPolymorphismResolver(
             RegisterPolymorphicDefinitionReference,
             ComposePolymorphicDiscriminatorNode,
             InvalidPolymorphicDiscriminator);
+        try
+        {
+            if (rootTypeInfo.PolymorphismOptions
+                is JsonPolymorphismOptions polymorphism)
+            {
+                polymorphismResolver.ValidateRegistration(
+                    rootTypeInfo.Type,
+                    polymorphism);
+            }
+
+            rootTypeInfo.MakeReadOnly();
+            serializerOptions.MakeReadOnly();
+        }
+        catch (JsonContractGenerationException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new JsonContractGenerationException(
+                JsonContractGenerationFailureKind.UnsupportedTypeInfo,
+                $"The root System.Text.Json contract for '{rootTypeInfo.Type.FullName}' could not be made read-only.",
+                contractId,
+                rootTypeInfo.Type,
+                innerException: exception);
+        }
+
+        typeInfoCache.Add(rootTypeInfo.Type, rootTypeInfo);
+        metadataResolver = new ContractMetadataResolver(
+            metadataExtensions
+                ?? throw new ArgumentNullException(nameof(metadataExtensions)));
+        builtInScalarResolver = new BuiltInScalarContractResolver(
+            contractId,
+            this.serializerOptions);
+        serializedObjectResolver = new SerializedObjectContractResolver(
+            contractId,
+            this.serializerOptions,
+            settings.ObjectClosure
+                == JsonObjectClosure.AllowAdditionalProperties);
+        typeMappingResolver = new TypeMappingResolver(
+            contractId,
+            typeMappers
+                ?? throw new ArgumentNullException(nameof(typeMappers)));
+        mappedShapeResolver = new MappedContractShapeResolver(contractId);
     }
 
-    internal ContractModelStructure Build (Type contractType)
+    internal ContractModelStructure Build ()
     {
-        if (contractType is null)
-        {
-            throw new ArgumentNullException(nameof(contractType));
-        }
+        Type contractType = rootTypeInfo.Type;
 
         serializedObjectResolver.ValidateGlobalContract(contractType);
         if (serializerOptions.ReferenceHandler is not null)
@@ -99,11 +120,13 @@ internal sealed class ContractModelBuilder
 
         JsonContractNode root = BuildNode(
             contractType,
-            ContractNullability.Root(contractType),
+            ContractNullability.Root(
+                contractType,
+                acceptsNull: !contractType.IsValueType),
             member: null,
-            jsonPropertyName: null,
-            propertyConverter: null,
-            propertyNumberHandling: null,
+            declaringTypeInfo: null,
+            propertyInfo: null,
+            diagnosticPropertyName: null,
             allowObjectReference: false);
 
         while (definitionRegistry.TryDequeuePending(
@@ -117,11 +140,13 @@ internal sealed class ContractModelBuilder
 
             JsonContractNode value = BuildNode(
                 registration.Key.Type,
-                ContractNullability.Root(registration.Key.Type),
+                ContractNullability.Root(
+                    registration.Key.Type,
+                    acceptsNull: false),
                 member: null,
-                jsonPropertyName: null,
-                propertyConverter: null,
-                propertyNumberHandling: null,
+                declaringTypeInfo: null,
+                propertyInfo: null,
+                diagnosticPropertyName: null,
                 allowObjectReference: false);
             value = polymorphismResolver.ApplyDefinitionDiscriminator(
                 registration.Key.Type,
@@ -143,24 +168,39 @@ internal sealed class ContractModelBuilder
         Type declaredType,
         ContractNullability nullability,
         MemberInfo? member,
-        string? jsonPropertyName,
-        JsonConverter? propertyConverter,
-        JsonNumberHandling? propertyNumberHandling,
+        JsonTypeInfo? declaringTypeInfo,
+        JsonPropertyInfo? propertyInfo,
+        string? diagnosticPropertyName,
         bool allowObjectReference,
         ResolvedContractMetadata? resolvedMemberMetadata = null)
     {
+        if (propertyInfo is not null && declaringTypeInfo is null)
+        {
+            throw new InvalidOperationException(
+                "A serializer property contract requires its declaring JsonTypeInfo.");
+        }
+
+        string? jsonPropertyName =
+            propertyInfo?.Name ?? diagnosticPropertyName;
+        JsonConverter? propertyConverter =
+            propertyInfo?.CustomConverter;
+        JsonNumberHandling? propertyNumberHandling =
+            propertyInfo?.NumberHandling;
         Type targetType = Nullable.GetUnderlyingType(declaredType) ?? declaredType;
-        ResolvedContractMetadata typeMetadata = ResolveTypeMetadata(targetType);
+        JsonTypeInfo declaredTypeInfo = ResolveTypeInfo(
+            declaredType,
+            jsonPropertyName);
+        JsonTypeInfo typeInfo = targetType == declaredType
+            ? declaredTypeInfo
+            : ResolveTypeInfo(targetType, jsonPropertyName);
+        ResolvedContractMetadata typeMetadata = ResolveTypeMetadata(
+            targetType,
+            typeInfo);
         ResolvedContractMetadata? memberMetadata = member is null
             ? null
             : resolvedMemberMetadata
-                ?? metadataResolver.ResolveMember(
-                    contractId,
-                    targetType,
-                    member,
-                    jsonPropertyName
-                        ?? throw new InvalidOperationException(
-                            "A serialized member must have a JSON property name."));
+                ?? throw new InvalidOperationException(
+                    "Serialized member metadata must be resolved with its declaring JsonTypeInfo and JsonPropertyInfo.");
 
         ResolvedContractMetadata effectiveMetadata = memberMetadata is null
             ? typeMetadata
@@ -170,13 +210,11 @@ internal sealed class ContractModelBuilder
                 contractId,
                 targetType,
                 jsonPropertyName);
-        JsonTypeInfo typeInfo = ResolveTypeInfo(targetType, jsonPropertyName);
         ResolvedTypeMapping? mapping = typeMappingResolver.Resolve(
-            targetType,
             typeInfo,
-            member,
-            jsonPropertyName,
-            propertyConverter);
+            declaringTypeInfo ?? typeInfo,
+            propertyInfo,
+            jsonPropertyName);
         TypeMappingAuthorityValidator.Validate(
             contractId,
             targetType,
@@ -184,24 +222,11 @@ internal sealed class ContractModelBuilder
             propertyConverter,
             jsonPropertyName,
             mapping);
-        if (effectiveMetadata.IsArbitrary)
-        {
-            return BuildArbitraryNode(
-                targetType,
-                member,
-                jsonPropertyName,
-                propertyConverter,
-                typeInfo,
-                mapping,
-                effectiveMetadata);
-        }
-
         bool isNullable = ResolveNullability(
             declaredType,
             targetType,
             jsonPropertyName,
-            nullability,
-            effectiveMetadata);
+            nullability);
 
         if (allowObjectReference
             && mapping is null
@@ -211,16 +236,6 @@ internal sealed class ContractModelBuilder
             && typeInfo.Kind == JsonTypeInfoKind.Object
             && typeInfo.PolymorphismOptions is null)
         {
-            ValidateFiniteSerializerValues(
-                targetType,
-                jsonPropertyName,
-                propertyConverter,
-                effectiveMetadata);
-            ContractNodeComposer.ValidateMetadataCompatibility(
-                contractId,
-                targetType,
-                jsonPropertyName,
-                effectiveMetadata);
             DefinitionRegistration definition = definitionRegistry.GetOrAdd(
                 new DefinitionKey(targetType, null, null),
                 discriminatorValue: null);
@@ -251,17 +266,6 @@ internal sealed class ContractModelBuilder
                 mapping,
                 jsonPropertyName,
                 BuildMappedSurrogate);
-        if (mapping is null
-            || BuiltInScalarContractResolver.IsSystemTextJsonConverter(
-                propertyConverter ?? typeInfo.Converter))
-        {
-            ValidateFiniteSerializerValues(
-                targetType,
-                jsonPropertyName,
-                propertyConverter,
-                effectiveMetadata);
-        }
-
         return ContractNodeComposer.Compose(
             contractId,
             targetType,
@@ -271,111 +275,6 @@ internal sealed class ContractModelBuilder
             effectiveMetadata,
             isNullable,
             new JsonContractSource(targetType, member));
-    }
-
-    private JsonContractNode BuildArbitraryNode (
-        Type targetType,
-        MemberInfo? member,
-        string? jsonPropertyName,
-        JsonConverter? propertyConverter,
-        JsonTypeInfo typeInfo,
-        ResolvedTypeMapping? mapping,
-        ResolvedContractMetadata metadata)
-    {
-        JsonConverter effectiveConverter =
-            propertyConverter ?? typeInfo.Converter;
-        bool hasUnknownConverter =
-            !BuiltInScalarContractResolver.IsSystemTextJsonConverter(
-                effectiveConverter);
-        bool hasArbitraryRepresentation =
-            IsArbitraryJsonType(targetType)
-            || hasUnknownConverter
-            || mapping?.Mapping.Kind
-                == JsonContractTypeMappingKind.Arbitrary;
-        if (!hasArbitraryRepresentation
-            || (mapping is not null
-                && mapping.Mapping.Kind
-                    != JsonContractTypeMappingKind.Arbitrary))
-        {
-            throw ConflictingSerializerMetadata(
-                targetType,
-                jsonPropertyName,
-                JsonContractMetadataKind.Arbitrary,
-                metadata,
-                "An arbitrary JSON declaration conflicts with an interpreted serializer or type-mapper contract.");
-        }
-
-        ContractNodeShape shape = mapping is null
-            ? new ContractNodeShape(JsonContractNodeKind.Arbitrary)
-            : mappedShapeResolver.Resolve(
-                targetType,
-                mapping,
-                jsonPropertyName,
-                BuildMappedSurrogate);
-        return ContractNodeComposer.Compose(
-            contractId,
-            targetType,
-            jsonPropertyName,
-            shape,
-            valueValidator,
-            metadata,
-            isNullable: true,
-            new JsonContractSource(targetType, member));
-    }
-
-    private void ValidateFiniteSerializerValues (
-        Type targetType,
-        string? jsonPropertyName,
-        JsonConverter? propertyConverter,
-        ResolvedContractMetadata metadata)
-    {
-        if (!SerializerFiniteValueValidator.Supports(targetType))
-        {
-            return;
-        }
-
-        foreach (ResolvedContractMetadata.MetadataProvenance declaration
-            in metadata.MetadataDeclarations)
-        {
-            JsonContractMetadataKind metadataKind =
-                declaration.Metadata.Kind;
-            if (metadataKind is not (
-                    JsonContractMetadataKind.Const
-                    or JsonContractMetadataKind.EnumValue))
-            {
-                continue;
-            }
-
-            ValidateFiniteSerializerValue(
-                targetType,
-                jsonPropertyName,
-                propertyConverter,
-                declaration.Metadata.JsonValue!.Value,
-                metadataKind);
-        }
-    }
-
-    private void ValidateFiniteSerializerValue (
-        Type targetType,
-        string? jsonPropertyName,
-        JsonConverter? propertyConverter,
-        JsonElement value,
-        JsonContractMetadataKind metadataKind)
-    {
-        if (serializerValueValidator.IsRoundTripStable(
-            targetType,
-            propertyConverter,
-            value))
-        {
-            return;
-        }
-
-        throw ContractMetadataFailure.Invalid(
-            contractId,
-            targetType,
-            jsonPropertyName,
-            metadataKind,
-            "A declared JSON value is not accepted and emitted unchanged by the authoritative serializer contract.");
     }
 
     private ContractNodeShape BuildSerializerShape (
@@ -507,16 +406,18 @@ internal sealed class ContractModelBuilder
                 continue;
             }
 
+            JsonTypeInfo valueTypeInfo = ResolveTypeInfo(
+                propertyInfo.PropertyType,
+                propertyInfo.Name);
             ResolvedContractMetadata memberMetadata =
                 metadataResolver.ResolveMember(
                     contractId,
                     Nullable.GetUnderlyingType(propertyInfo.PropertyType)
                         ?? propertyInfo.PropertyType,
-                    member,
-                    propertyInfo.Name);
-            ValidateRequiredMetadata(
-                propertyInfo,
-                memberMetadata);
+                    valueTypeInfo,
+                    typeInfo,
+                    propertyInfo,
+                    member);
             bool isRequired = propertyInfo.IsRequired;
             JsonContractNode propertyValue = BuildNode(
                 propertyInfo.PropertyType,
@@ -524,9 +425,9 @@ internal sealed class ContractModelBuilder
                     member,
                     propertyInfo.PropertyType),
                 member,
-                propertyInfo.Name,
-                propertyInfo.CustomConverter,
-                propertyInfo.NumberHandling,
+                declaringTypeInfo: typeInfo,
+                propertyInfo: propertyInfo,
+                diagnosticPropertyName: null,
                 allowObjectReference: true,
                 resolvedMemberMetadata: memberMetadata);
             properties.Add(
@@ -574,9 +475,9 @@ internal sealed class ContractModelBuilder
             elementType,
             nullability.Child(elementType, genericArgumentIndex),
             member: null,
-            jsonPropertyName: null,
-            propertyConverter: null,
-            propertyNumberHandling: null,
+            declaringTypeInfo: null,
+            propertyInfo: null,
+            diagnosticPropertyName: null,
             allowObjectReference: true);
         return new ContractNodeShape(
             JsonContractNodeKind.Array,
@@ -607,9 +508,9 @@ internal sealed class ContractModelBuilder
             valueType,
             nullability.Child(valueType, genericArgumentIndex),
             member: null,
-            jsonPropertyName: null,
-            propertyConverter: null,
-            propertyNumberHandling: null,
+            declaringTypeInfo: null,
+            propertyInfo: null,
+            diagnosticPropertyName: null,
             allowObjectReference: true);
         return new ContractNodeShape(
             JsonContractNodeKind.Dictionary,
@@ -646,9 +547,9 @@ internal sealed class ContractModelBuilder
                 .ForMember(member, propertyType)
                 .Child(valueType, genericArgumentIndex),
             member: null,
-            jsonPropertyName: null,
-            propertyConverter: null,
-            propertyNumberHandling: null,
+            declaringTypeInfo: null,
+            propertyInfo: null,
+            diagnosticPropertyName: null,
             allowObjectReference: true);
     }
 
@@ -663,19 +564,11 @@ internal sealed class ContractModelBuilder
 
         try
         {
-            IJsonTypeInfoResolver resolver =
-                serializerOptions.TypeInfoResolver
-                ?? throw new InvalidOperationException(
-                    "Serializer options do not expose a type-info resolver.");
-            JsonTypeInfo typeInfo = resolver.GetTypeInfo(
-                targetType,
-                serializerOptions)
-                ?? throw new NotSupportedException(
-                    $"The configured resolver did not provide type information for '{targetType.FullName}'.");
+            JsonTypeInfo typeInfo = serializerOptions.GetTypeInfo(targetType);
             if (typeInfo.Type != targetType)
             {
                 throw new InvalidOperationException(
-                    $"Resolver returned type information for '{typeInfo.Type.FullName}'.");
+                    $"Serializer options returned type information for '{typeInfo.Type.FullName}'.");
             }
 
             if (typeInfo.PolymorphismOptions
@@ -709,7 +602,9 @@ internal sealed class ContractModelBuilder
         }
     }
 
-    private ResolvedContractMetadata ResolveTypeMetadata (Type targetType)
+    private ResolvedContractMetadata ResolveTypeMetadata (
+        Type targetType,
+        JsonTypeInfo typeInfo)
     {
         if (typeMetadataCache.TryGetValue(
             targetType,
@@ -720,7 +615,7 @@ internal sealed class ContractModelBuilder
 
         ResolvedContractMetadata resolved = metadataResolver.ResolveType(
             contractId,
-            targetType);
+            typeInfo);
         typeMetadataCache.Add(targetType, resolved);
         return resolved;
     }
@@ -729,30 +624,9 @@ internal sealed class ContractModelBuilder
         Type declaredType,
         Type targetType,
         string? jsonPropertyName,
-        ContractNullability nullability,
-        ResolvedContractMetadata effectiveMetadata)
+        ContractNullability nullability)
     {
         NullableContractState state = nullability.ResolveState(declaredType);
-        if (effectiveMetadata.AllowsNull == true)
-        {
-            // CLR type declarations have no use-site nullable context, while
-            // System.Text.Json can serialize a null reference-type root.
-            bool isNullableReferenceRoot =
-                nullability.IsRoot && !declaredType.IsValueType;
-            if (state == NullableContractState.NotNullable
-                && !isNullableReferenceRoot)
-            {
-                throw ConflictingSerializerMetadata(
-                    targetType,
-                    jsonPropertyName,
-                    JsonContractMetadataKind.AllowNull,
-                    effectiveMetadata,
-                    "The declared null acceptance conflicts with CLR nullable metadata.");
-            }
-
-            return true;
-        }
-
         return state switch
         {
             NullableContractState.Nullable => true,
@@ -760,47 +634,8 @@ internal sealed class ContractModelBuilder
             _ => throw UnsupportedTypeInfo(
                 targetType,
                 jsonPropertyName,
-                "Nullable reference metadata is unavailable. Declare null acceptance explicitly or provide authoritative member metadata."),
+                "Nullable reference metadata is unavailable for the effective serializer contract."),
         };
-    }
-
-    private void ValidateRequiredMetadata (
-        JsonPropertyInfo propertyInfo,
-        ResolvedContractMetadata memberMetadata)
-    {
-        if (memberMetadata.IsRequired == true && !propertyInfo.IsRequired)
-        {
-            throw ConflictingSerializerMetadata(
-                Nullable.GetUnderlyingType(propertyInfo.PropertyType)
-                    ?? propertyInfo.PropertyType,
-                propertyInfo.Name,
-                JsonContractMetadataKind.Required,
-                memberMetadata,
-                "The declared required property conflicts with System.Text.Json requiredness.");
-        }
-    }
-
-    private JsonContractGenerationException ConflictingSerializerMetadata (
-        Type targetType,
-        string? jsonPropertyName,
-        JsonContractMetadataKind metadataKind,
-        ResolvedContractMetadata metadata,
-        string message)
-    {
-        IReadOnlyList<string> sourceIds = MetadataFailure.SortSourceIds(
-            metadata.MetadataDeclarations
-                .Where(
-                    declaration =>
-                        declaration.Metadata.Kind == metadataKind)
-                .Select(static declaration => declaration.SourceId));
-        return new JsonContractGenerationException(
-            JsonContractGenerationFailureKind.ConflictingMetadata,
-            message,
-            contractId,
-            targetType,
-            jsonPropertyName,
-            metadataKind,
-            sourceIds);
     }
 
     private JsonContractNode BuildMappedSurrogate (
@@ -809,11 +644,13 @@ internal sealed class ContractModelBuilder
     {
         return BuildNode(
             surrogateType,
-            ContractNullability.Root(surrogateType),
+            ContractNullability.Root(
+                surrogateType,
+                acceptsNull: false),
             member: null,
-            jsonPropertyName,
-            propertyConverter: null,
-            propertyNumberHandling: null,
+            declaringTypeInfo: null,
+            propertyInfo: null,
+            diagnosticPropertyName: jsonPropertyName,
             allowObjectReference: true);
     }
 
@@ -878,7 +715,6 @@ internal sealed class ContractModelBuilder
             contractId,
             targetType: targetType,
             jsonPropertyName: propertyName,
-            metadataKind: JsonContractMetadataKind.Discriminator,
             innerException: innerException);
     }
 

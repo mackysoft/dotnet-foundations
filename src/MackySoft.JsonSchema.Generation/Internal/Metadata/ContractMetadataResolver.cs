@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json.Serialization.Metadata;
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts;
 using MackySoft.JsonSchema.Generation.Internal.Metadata.Declarations;
@@ -11,41 +12,47 @@ internal sealed class ContractMetadataResolver
     private readonly ContractMetadataDeclarationCollector declarationCollector;
 
     internal ContractMetadataResolver (
-        IReadOnlyList<IJsonContractMetadataProvider> metadataProviders)
+        IReadOnlyList<MetadataExtensionRegistration> metadataExtensions)
     {
         declarationCollector =
-            new ContractMetadataDeclarationCollector(metadataProviders);
+            new ContractMetadataDeclarationCollector(metadataExtensions);
     }
 
     internal ResolvedContractMetadata ResolveType (
         string contractId,
-        Type type)
+        JsonTypeInfo typeInfo)
     {
         if (contractId is null)
         {
             throw new ArgumentNullException(nameof(contractId));
         }
 
-        if (type is null)
+        if (typeInfo is null)
         {
-            throw new ArgumentNullException(nameof(type));
+            throw new ArgumentNullException(nameof(typeInfo));
         }
 
         var target = new MetadataResolutionTarget(
             contractId,
-            type,
-            jsonPropertyName: null,
-            isMember: false);
+            typeInfo.Type,
+            jsonPropertyName: null);
         MetadataDeclarationSet declarations =
-            declarationCollector.Collect(target, member: null);
+            declarationCollector.Collect(
+                target,
+                typeInfo,
+                typeInfo,
+                propertyInfo: null,
+                typeInfo.Type);
         return ContractMetadataValidator.Resolve(target, declarations);
     }
 
     internal ResolvedContractMetadata ResolveMember (
         string contractId,
         Type targetType,
-        MemberInfo member,
-        string jsonPropertyName)
+        JsonTypeInfo valueTypeInfo,
+        JsonTypeInfo declaringTypeInfo,
+        JsonPropertyInfo propertyInfo,
+        MemberInfo member)
     {
         if (contractId is null)
         {
@@ -62,18 +69,32 @@ internal sealed class ContractMetadataResolver
             throw new ArgumentNullException(nameof(member));
         }
 
-        if (jsonPropertyName is null)
+        if (valueTypeInfo is null)
         {
-            throw new ArgumentNullException(nameof(jsonPropertyName));
+            throw new ArgumentNullException(nameof(valueTypeInfo));
+        }
+
+        if (declaringTypeInfo is null)
+        {
+            throw new ArgumentNullException(nameof(declaringTypeInfo));
+        }
+
+        if (propertyInfo is null)
+        {
+            throw new ArgumentNullException(nameof(propertyInfo));
         }
 
         var target = new MetadataResolutionTarget(
             contractId,
             targetType,
-            jsonPropertyName,
-            isMember: true);
+            propertyInfo.Name);
         MetadataDeclarationSet declarations =
-            declarationCollector.Collect(target, member);
+            declarationCollector.Collect(
+                target,
+                valueTypeInfo,
+                declaringTypeInfo,
+                propertyInfo,
+                member);
         return ContractMetadataValidator.Resolve(target, declarations);
     }
 
@@ -107,8 +128,7 @@ internal sealed class ContractMetadataResolver
         var target = new MetadataResolutionTarget(
             contractId,
             targetType,
-            jsonPropertyName,
-            isMember: jsonPropertyName is not null);
+            jsonPropertyName);
         MetadataDeclarationSet declarations =
             MetadataDeclarationSet.Merge(baseline, overlay);
         return ContractMetadataValidator.Resolve(target, declarations);

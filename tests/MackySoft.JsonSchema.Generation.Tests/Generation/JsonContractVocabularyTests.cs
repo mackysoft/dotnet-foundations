@@ -4,7 +4,6 @@ using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
-using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Projection;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 using MackySoft.Text.Vocabularies;
@@ -38,32 +37,11 @@ public sealed class JsonContractVocabularyTests
         Assert.Equal(
             new[]
             {
-                "title",
-                "description",
-                "example",
-                "required",
-                "allowNull",
-                "const",
-                "enumValue",
-                "minimum",
-                "exclusiveMinimum",
-                "maximum",
-                "exclusiveMaximum",
-                "minimumLength",
-                "maximumLength",
-                "minimumItems",
-                "maximumItems",
-                "minimumProperties",
-                "maximumProperties",
-                "pattern",
-                "format",
                 "arbitrary",
-                "oneOfBranch",
-                "discriminator",
+                "scalar",
+                "textVocabulary",
+                "contractType",
             },
-            Vocabulary.GetTexts<JsonContractMetadataKind>());
-        Assert.Equal(
-            new[] { "arbitrary", "scalar", "enum", "contractType" },
             Vocabulary.GetTexts<JsonContractTypeMappingKind>());
         Assert.Equal(
             new[]
@@ -203,6 +181,46 @@ public sealed class JsonContractVocabularyTests
         Assert.Equal(
             new[] { "doneValue", "waiting" },
             value.AllowedValues.Select(static item => item.GetString()));
+    }
+
+    [Fact]
+    [Trait("Size", "Small")]
+    public void Generate_WhenTextVocabularyHasOneEntry_ProjectsCanonicalTextAsConstant ()
+    {
+        var serializerOptions = new JsonSerializerOptions
+        {
+            UnmappedMemberHandling =
+                JsonUnmappedMemberHandling.Disallow,
+            Converters =
+            {
+                new VocabularyJsonConverterFactory(),
+            },
+        };
+
+        JsonContractGenerationResult result =
+            GenerationTestHarness.Generate<SingleTextContract>(
+                "tests.single-text-vocabulary",
+                serializerOptions,
+                typeMappers: new[]
+                {
+                    new DeclaredTextVocabularyTypeMapper(),
+                });
+
+        JsonContractNode value = GenerationTestHarness
+            .GetProperty(result.Model.Root, "Value")
+            .Value;
+        Assert.Equal(JsonContractNodeKind.Const, value.Kind);
+        Assert.Equal(JsonContractScalarKind.String, value.ScalarKind);
+        Assert.Equal("only", value.Constant?.GetString());
+        Assert.Empty(value.AllowedValues);
+
+        using JsonDocument schema = JsonDocument.Parse(
+            result.GetJsonSchemaUtf8());
+        JsonElement valueSchema = schema.RootElement
+            .GetProperty("properties")
+            .GetProperty("Value");
+        Assert.Equal("only", valueSchema.GetProperty("const").GetString());
+        Assert.False(valueSchema.TryGetProperty("enum", out _));
     }
 
     [Theory]
@@ -370,6 +388,41 @@ public sealed class JsonContractVocabularyTests
             exception.SourceIds);
     }
 
+    [Fact]
+    [Trait("Size", "Small")]
+    public void Generate_WhenTextVocabularyMapperClaimsMismatchedCustomConverter_ReportsUnsupportedConverter ()
+    {
+        var serializerOptions = new JsonSerializerOptions
+        {
+            UnmappedMemberHandling =
+                JsonUnmappedMemberHandling.Disallow,
+            Converters =
+            {
+                new ReadAllVocabularyConverter(),
+            },
+        };
+
+        JsonContractGenerationException exception =
+            Assert.Throws<JsonContractGenerationException>(
+                () => GenerationTestHarness.Generate<
+                    VocabularyWithoutAdapterContract>(
+                        "tests.mismatched-vocabulary-converter",
+                        serializerOptions,
+                        typeMappers: new[]
+                        {
+                            new UnconditionalTextVocabularyTypeMapper(),
+                        }));
+
+        Assert.Equal(
+            JsonContractGenerationFailureKind.UnsupportedConverter,
+            exception.FailureKind);
+        Assert.Equal(typeof(TextState), exception.TargetType);
+        Assert.Equal("Value", exception.JsonPropertyName);
+        Assert.Equal(
+            new[] { "tests.unconditional-text-vocabulary" },
+            exception.SourceIds);
+    }
+
     private sealed class EnumContract
     {
         public NumericState Numeric { get; set; }
@@ -387,6 +440,11 @@ public sealed class JsonContractVocabularyTests
     private sealed class VocabularyWithoutAdapterContract
     {
         public TextState Value { get; set; }
+    }
+
+    private sealed class SingleTextContract
+    {
+        public SingleTextState Value { get; set; }
     }
 
     private sealed class PropertyStringEnumContract
@@ -436,6 +494,13 @@ public sealed class JsonContractVocabularyTests
 
         [VocabularyText("doneValue")]
         Done,
+    }
+
+    [VocabularyDefinition]
+    private enum SingleTextState
+    {
+        [VocabularyText("only")]
+        Only,
     }
 
     private sealed class NumericStateConverter : JsonConverter<NumericState>
@@ -505,15 +570,16 @@ public sealed class JsonContractVocabularyTests
 
         public bool CanMap (JsonContractTypeMapperContext context)
         {
-            return Vocabulary.IsVocabulary(context.TargetType)
-                && IsVocabularyAdapter(context.EffectiveConverter);
+            return Vocabulary.IsVocabulary(context.TypeInfo.Type)
+                && IsVocabularyAdapter(
+                    context.PropertyInfo?.CustomConverter
+                        ?? context.TypeInfo.Converter);
         }
 
         public JsonContractTypeMapping Map (
             JsonContractTypeMapperContext context)
         {
-            return JsonContractTypeMapping.TextVocabulary(
-                context.TargetType);
+            return JsonContractTypeMapping.TextVocabulary();
         }
 
         private static bool IsVocabularyAdapter (JsonConverter? converter)
@@ -534,14 +600,13 @@ public sealed class JsonContractVocabularyTests
 
         public bool CanMap (JsonContractTypeMapperContext context)
         {
-            return Vocabulary.IsVocabulary(context.TargetType);
+            return Vocabulary.IsVocabulary(context.TypeInfo.Type);
         }
 
         public JsonContractTypeMapping Map (
             JsonContractTypeMapperContext context)
         {
-            return JsonContractTypeMapping.TextVocabulary(
-                context.TargetType);
+            return JsonContractTypeMapping.TextVocabulary();
         }
     }
 }

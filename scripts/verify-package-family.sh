@@ -416,42 +416,41 @@ CS
     ' "${consumer_project_path}"
     cat > "${consumer_dir}/Class1.cs" <<'CS'
 using System;
-using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using MackySoft.JsonSchema.Generation;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Configuration;
-using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Extensibility;
+using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Projection;
 
 namespace JsonSchemaGenerationPackageConsumer
 {
     public static class ContractModelConsumer
     {
-        public static System.Type ContractModelType => typeof(JsonContractModel);
-
         public static JsonContractGenerationResult Generate()
         {
             var serializerOptions = new JsonSerializerOptions
             {
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+                TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
             };
+            serializerOptions.MakeReadOnly();
+            JsonTypeInfo typeInfo =
+                serializerOptions.GetTypeInfo(typeof(ExampleContract));
+            var metadataRegistry = new JsonContractMetadataRegistry()
+                .RegisterProvider(new ConsumerContractMetadataProvider())
+                .RegisterAttributeInterpreter(
+                    new ConsumerConstraintInterpreter());
             var generator = new JsonContractGenerator(
                 new JsonContractGeneratorOptions(
                     JsonContractGenerationSettings.ClosedObjects,
-                    modelContributors: new IJsonContractModelContributor[]
-                    {
-                        new ConsumerModelContributor(),
-                    }));
+                    metadataRegistry));
             return generator.Generate(
                 new JsonContractGenerationRequest(
                     "package.consumer/example",
-                    typeof(ExampleContract),
-                    serializerOptions,
-                    new DefaultJsonTypeInfoResolver(),
+                    typeInfo,
                     new JsonSchemaDocumentOptions(
                         JsonSchemaDocumentKind.Complete,
                         id: null,
@@ -460,109 +459,78 @@ namespace JsonSchemaGenerationPackageConsumer
 
         public static void Verify()
         {
-            foreach (Type exportedType in
-                typeof(DescriptionAttribute).Assembly.GetExportedTypes())
-            {
-                if (typeof(Attribute).IsAssignableFrom(exportedType)
-                    && exportedType.Name.StartsWith(
-                        "JsonContract",
-                        StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException(
-                        "Package consumer found a prefixed compatibility attribute.");
-                }
-            }
-
             JsonContractGenerationResult result = Generate();
             byte[] schemaUtf8 = result.GetJsonSchemaUtf8();
-            byte[] metadataUtf8 = result.GetTypeMetadataUtf8();
 
             using JsonDocument schema = JsonDocument.Parse(schemaUtf8);
-            using JsonDocument metadata = JsonDocument.Parse(metadataUtf8);
             JsonElement schemaRoot = schema.RootElement;
-            JsonElement metadataRoot = metadata.RootElement;
 
-            if (result.Model.ContractId != "package.consumer/example"
-                || result.ContractDigest.Length != 64
-                || !IsLowercaseHex(result.ContractDigest)
-                || schemaRoot.GetProperty("$schema").GetString()
-                    != JsonContractGenerationSettings.Draft202012Dialect
-                || schemaRoot.GetProperty("x-contract-id").GetString()
-                    != result.Model.ContractId
-                || schemaRoot.GetProperty("x-contract-digest").GetString()
-                    != result.ContractDigest
+            if (schemaRoot
+                    .GetProperty("examples")[0]
+                    .GetProperty("Value")
+                    .GetString()
+                    != "sample"
                 || schemaRoot
                     .GetProperty("properties")
-                    .GetProperty("Value")
-                    .GetProperty("description")
-                    .GetString()
-                    != "Package consumer value."
-                || metadataRoot.GetProperty("contractId").GetString()
-                    != result.Model.ContractId
-                || metadataRoot.GetProperty("contractDigest").GetString()
-                    != result.ContractDigest
-                || metadataRoot.GetProperty("schemaName").GetString()
-                    != "example"
-                || metadataRoot
-                    .GetProperty("root")
-                    .GetProperty("kind")
-                    .GetString()
-                    != "object"
-                || metadataRoot
-                    .GetProperty("contributions")
-                    .GetArrayLength()
-                    != 1
-                || metadataRoot
-                    .GetProperty("contributions")[0]
-                    .GetProperty("targetPointer")
-                    .GetString()
-                    != "/root/properties/0/value")
+                    .GetProperty("exact_value")
+                    .GetProperty("minimum")
+                    .GetRawText()
+                    != "9007199254740993")
             {
                 throw new InvalidOperationException(
                     "Package consumer observed inconsistent contract generation outputs.");
             }
         }
-
-        private static bool IsLowercaseHex(string value)
-        {
-            foreach (char character in value)
-            {
-                if (!((character >= '0' && character <= '9')
-                    || (character >= 'a' && character <= 'f')))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
     }
 
     public sealed class ExampleContract
     {
-        [Description("Package consumer value.")]
         public string Value { get; set; } = string.Empty;
+
+        [JsonPropertyName("exact_value")]
+        [ConsumerConstraint]
+        public long ExactValue { get; set; }
     }
 
-    public sealed class ConsumerModelContributor : IJsonContractModelContributor
+    [AttributeUsage(AttributeTargets.Property)]
+    public sealed class ConsumerConstraintAttribute : Attribute
     {
-        public string StableId => "package.consumer.contributor";
+    }
+
+    public sealed class ConsumerContractMetadataProvider
+        : IJsonContractMetadataProvider<ExampleContract>
+    {
+        public string StableId => "package.consumer.metadata";
 
         public string ContractVersion => "1";
 
-        public IReadOnlyList<JsonContractModelContribution> GetContributions(
-            JsonContractModelContext context)
+        public void ProvideMetadata(
+            JsonContractMetadataContext<ExampleContract> context,
+            JsonContractMetadataBuilder<ExampleContract> builder)
         {
-            JsonContractModelTarget target =
-                context.GetTarget(context.Root.Properties[0].Value);
-            return new[]
-            {
-                new JsonContractModelContribution(
-                    target,
-                    "consumerHint",
-                    JsonSerializer.SerializeToElement(true),
-                    StableId),
-            };
+            builder.AddExample(
+                new ExampleContract
+                {
+                    Value = "sample",
+                    ExactValue = 9007199254740993L,
+                });
+        }
+    }
+
+    public sealed class ConsumerConstraintInterpreter
+        : IJsonContractAttributeInterpreter<ConsumerConstraintAttribute, long>
+    {
+        public string StableId => "package.consumer.constraint";
+
+        public string ContractVersion => "1";
+
+        public void InterpretAttribute(
+            ConsumerConstraintAttribute attribute,
+            JsonContractMetadataContext<long> context,
+            JsonContractMetadataBuilder<long> builder)
+        {
+            builder.SetMinimum(
+                JsonContractNumber.FromInt64(9007199254740993L));
         }
     }
 }

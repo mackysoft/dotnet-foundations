@@ -14,9 +14,12 @@ public enum JsonContractTypeMappingKind
     [VocabularyText("scalar")]
     Scalar,
 
-    /// <summary> A finite set of JSON values sharing a scalar category. </summary>
-    [VocabularyText("enum")]
-    Enum,
+    /// <summary>
+    /// Canonical strings derived from the mapped target's declared text
+    /// vocabulary and effective converter.
+    /// </summary>
+    [VocabularyText("textVocabulary")]
+    TextVocabulary,
 
     /// <summary>
     /// The normalized serializer structure, annotations, and constraints of a

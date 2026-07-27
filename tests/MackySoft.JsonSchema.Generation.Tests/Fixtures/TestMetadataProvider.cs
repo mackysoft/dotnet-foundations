@@ -1,30 +1,36 @@
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Metadata;
+
 namespace MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
-internal sealed class TestMetadataProvider : IJsonContractMetadataProvider
+internal sealed class TestMetadataProvider<TValue>
+    : IJsonContractMetadataProvider<TValue>
 {
-    private readonly Func<
-        JsonContractMetadataContext,
-        IReadOnlyList<JsonContractMetadata>> getMetadata;
+    private readonly Action<
+        JsonContractMetadataContext<TValue>,
+        JsonContractMetadataBuilder<TValue>> provideMetadata;
 
     internal TestMetadataProvider (
         string stableId,
-        Func<JsonContractMetadataContext, IReadOnlyList<JsonContractMetadata>> getMetadata,
+        Action<
+            JsonContractMetadataContext<TValue>,
+            JsonContractMetadataBuilder<TValue>> provideMetadata,
         string contractVersion = "1")
     {
         StableId = stableId;
         ContractVersion = contractVersion;
-        this.getMetadata = getMetadata;
+        this.provideMetadata = provideMetadata
+            ?? throw new ArgumentNullException(nameof(provideMetadata));
     }
 
     public string StableId { get; }
 
     public string ContractVersion { get; }
 
-    public IReadOnlyList<JsonContractMetadata> GetMetadata (
-        JsonContractMetadataContext context)
+    public void ProvideMetadata (
+        JsonContractMetadataContext<TValue> context,
+        JsonContractMetadataBuilder<TValue> builder)
     {
-        return getMetadata(context);
+        provideMetadata(context, builder);
     }
 }

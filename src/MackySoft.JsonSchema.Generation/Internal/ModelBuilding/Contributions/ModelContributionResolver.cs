@@ -47,7 +47,6 @@ internal static class ModelContributionResolver
                 "properties",
                 "propertyName",
                 "referenceId",
-                "requiredProperties",
                 "root",
                 "scalarKind",
                 "sourceId",
@@ -325,8 +324,7 @@ internal static class ModelContributionResolver
                     contractId,
                     targetType,
                     jsonPropertyName,
-                    metadataKind: null,
-                    SortSourceIds(
+                    sourceIds: SortSourceIds(
                         ordered
                             .Skip(start)
                             .Take(end - start)
@@ -434,9 +432,8 @@ internal static class ModelContributionResolver
             contractId,
             targetType,
             jsonPropertyName,
-            metadataKind: null,
-            SortSourceIds(sourceIds),
-            innerException);
+            sourceIds: SortSourceIds(sourceIds),
+            innerException: innerException);
     }
 
     private sealed class ContributionDeclaration

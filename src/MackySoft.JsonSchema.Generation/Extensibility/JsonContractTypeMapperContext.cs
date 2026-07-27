@@ -1,6 +1,3 @@
-using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Extensibility;
@@ -12,52 +9,45 @@ namespace MackySoft.JsonSchema.Generation.Extensibility;
 public sealed class JsonContractTypeMapperContext
 {
     internal JsonContractTypeMapperContext (
-        Type targetType,
         JsonTypeInfo typeInfo,
-        JsonSerializerOptions serializerOptions,
-        MemberInfo? member,
-        string? jsonPropertyName,
-        JsonConverter? propertyConverter)
+        JsonTypeInfo declaringTypeInfo,
+        JsonPropertyInfo? propertyInfo)
     {
-        TargetType = targetType ?? throw new ArgumentNullException(nameof(targetType));
         TypeInfo = typeInfo ?? throw new ArgumentNullException(nameof(typeInfo));
-        SerializerOptions = serializerOptions ?? throw new ArgumentNullException(nameof(serializerOptions));
-        Member = member;
-        JsonPropertyName = jsonPropertyName;
-        PropertyConverter = propertyConverter;
+        DeclaringTypeInfo = declaringTypeInfo
+            ?? throw new ArgumentNullException(nameof(declaringTypeInfo));
+        PropertyInfo = propertyInfo;
     }
 
-    /// <summary> Gets the CLR type being mapped. </summary>
-    public Type TargetType { get; }
-
     /// <summary>
-    /// Gets the configured, read-only serializer type information used by
-    /// runtime JSON serialization.
+    /// Gets the exact configured, read-only serializer contract for the value
+    /// being mapped.
     /// </summary>
+    /// <remarks>
+    /// The mapped CLR type and owning serializer options are available from
+    /// <see cref="JsonTypeInfo.Type" /> and
+    /// <see cref="JsonTypeInfo.Options" />, respectively.
+    /// </remarks>
     public JsonTypeInfo TypeInfo { get; }
 
     /// <summary>
-    /// Gets the private, read-only serializer options snapshot that produced
-    /// <see cref="TypeInfo" />.
-    /// </summary>
-    public JsonSerializerOptions SerializerOptions { get; }
-
-    /// <summary> Gets the property or field whose value is being mapped, or <see langword="null" /> for a type contract. </summary>
-    public MemberInfo? Member { get; }
-
-    /// <summary> Gets the serialized property name when mapping a member value. </summary>
-    public string? JsonPropertyName { get; }
-
-    /// <summary> Gets a converter configured specifically for the member, when present. </summary>
-    public JsonConverter? PropertyConverter { get; }
-
-    /// <summary>
-    /// Gets the converter that takes precedence for the mapped type or member.
+    /// Gets the exact configured, read-only serializer contract that declares
+    /// <see cref="PropertyInfo" />.
     /// </summary>
     /// <remarks>
-    /// A member converter takes precedence over the converter exposed by
-    /// <see cref="TypeInfo" />.
+    /// This is the same instance as <see cref="TypeInfo" /> when the mapping
+    /// does not describe a property value.
     /// </remarks>
-    public JsonConverter EffectiveConverter =>
-        PropertyConverter ?? TypeInfo.Converter;
+    public JsonTypeInfo DeclaringTypeInfo { get; }
+
+    /// <summary>
+    /// Gets the exact effective serializer property contract whose value is
+    /// being mapped, or <see langword="null" /> for a type contract.
+    /// </summary>
+    /// <remarks>
+    /// The serialized name comes from <see cref="JsonPropertyInfo.Name" />.
+    /// <see cref="JsonPropertyInfo.CustomConverter" />, when present, takes
+    /// precedence over <see cref="JsonTypeInfo.Converter" />.
+    /// </remarks>
+    public JsonPropertyInfo? PropertyInfo { get; }
 }

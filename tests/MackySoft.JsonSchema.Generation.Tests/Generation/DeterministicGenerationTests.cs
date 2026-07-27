@@ -1,7 +1,7 @@
 using System.Text.Json;
 using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
-using MackySoft.JsonSchema.Generation.Metadata;
+using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Projection;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
@@ -13,23 +13,29 @@ public sealed class DeterministicGenerationTests
     [Trait("Size", "Small")]
     public void Generate_WithEquivalentRegistrationSets_ProducesIdenticalModelDigestAndBytes ()
     {
-        var alphaProvider = DescriptionProvider(
+        var alphaProvider = DescriptionProvider<string>(
             "tests.provider.alpha",
             "Alpha",
             "Alpha description.");
-        var betaProvider = DescriptionProvider(
+        var betaProvider = DescriptionProvider<int>(
             "tests.provider.beta",
             "Beta",
             "Beta description.");
+        var firstRegistry = new JsonContractMetadataRegistry()
+            .RegisterProvider(betaProvider)
+            .RegisterProvider(alphaProvider);
+        var secondRegistry = new JsonContractMetadataRegistry()
+            .RegisterProvider(alphaProvider)
+            .RegisterProvider(betaProvider);
 
         JsonContractGenerationResult first =
             GenerationTestHarness.Generate<DeterministicContract>(
                 "tests.deterministic-contract",
-                metadataProviders: new[] { betaProvider, alphaProvider });
+                metadataRegistry: firstRegistry);
         JsonContractGenerationResult second =
             GenerationTestHarness.Generate<DeterministicContract>(
                 "tests.deterministic-contract",
-                metadataProviders: new[] { alphaProvider, betaProvider });
+                metadataRegistry: secondRegistry);
 
         Assert.Equal(first.ContractDigest, second.ContractDigest);
         Assert.Equal(
@@ -113,20 +119,23 @@ public sealed class DeterministicGenerationTests
             second.GetTypeMetadataUtf8());
     }
 
-    private static TestMetadataProvider DescriptionProvider (
+    private static TestMetadataProvider<TValue> DescriptionProvider<TValue> (
         string stableId,
         string propertyName,
         string description)
     {
-        return new TestMetadataProvider(
+        return new TestMetadataProvider<TValue>(
             stableId,
-            context =>
-                string.Equals(
-                    context.JsonPropertyName,
+            (context, builder) =>
+            {
+                if (string.Equals(
+                    context.PropertyInfo?.Name,
                     propertyName,
-                    StringComparison.Ordinal)
-                    ? new[] { JsonContractMetadata.Description(description) }
-                    : Array.Empty<JsonContractMetadata>());
+                    StringComparison.Ordinal))
+                {
+                    builder.SetDescription(description);
+                }
+            });
     }
 
     private static TestModelContributor Contributor (string value)

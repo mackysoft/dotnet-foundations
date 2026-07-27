@@ -41,8 +41,8 @@ internal sealed class MappedContractShapeResolver
                     resolvedMapping,
                     jsonPropertyName);
 
-            case JsonContractTypeMappingKind.Enum:
-                return ResolveEnum(
+            case JsonContractTypeMappingKind.TextVocabulary:
+                return ResolveTextVocabulary(
                     targetType,
                     resolvedMapping,
                     jsonPropertyName);
@@ -90,43 +90,81 @@ internal sealed class MappedContractShapeResolver
             scalarKind);
     }
 
-    private ContractNodeShape ResolveEnum (
+    private ContractNodeShape ResolveTextVocabulary (
         Type targetType,
         ResolvedTypeMapping resolvedMapping,
         string? jsonPropertyName)
     {
-        JsonContractTypeMapping mapping = resolvedMapping.Mapping;
-        if (!mapping.ScalarKind.HasValue
-            || mapping.AllowedValues.Count == 0
-            || mapping.AllowedValues.Any(
-                value => !MatchesScalarKind(
-                    value,
-                    mapping.ScalarKind.Value)))
+        EnsureTextVocabularyTarget(
+            targetType,
+            resolvedMapping,
+            jsonPropertyName);
+        IReadOnlyList<string> canonicalTexts =
+            ReadTextVocabularyCanonicalTexts(
+                targetType,
+                resolvedMapping,
+                jsonPropertyName);
+
+        return CreateTextVocabularyShape(canonicalTexts);
+    }
+
+    private void EnsureTextVocabularyTarget (
+        Type targetType,
+        ResolvedTypeMapping resolvedMapping,
+        string? jsonPropertyName)
+    {
+        if (!VocabularyContractReader.IsVocabulary(targetType))
         {
             throw InvalidTypeMapping(
                 targetType,
                 jsonPropertyName,
                 resolvedMapping.Mapper,
-                "An enum type mapping must declare one scalar kind and one or more matching values.");
+                "A text-vocabulary mapping requires the mapped target type to declare MackySoft.Text.Vocabularies.");
         }
+    }
 
-        if (targetType.IsEnum
-            && mapping.ScalarKind.Value == JsonContractScalarKind.String)
+    private IReadOnlyList<string> ReadTextVocabularyCanonicalTexts (
+        Type targetType,
+        ResolvedTypeMapping resolvedMapping,
+        string? jsonPropertyName)
+    {
+        try
         {
-            EnsureCanonicalVocabularyValues(
+            return TextVocabularyMappingResolver.ReadCanonicalTexts(
+                resolvedMapping.Context);
+        }
+        catch (Exception exception)
+        {
+            throw InvalidTypeMapping(
                 targetType,
-                resolvedMapping,
-                jsonPropertyName);
+                jsonPropertyName,
+                resolvedMapping.Mapper,
+                "The effective converter does not implement the target type's exact canonical text vocabulary.",
+                exception);
+        }
+    }
+
+    private static ContractNodeShape CreateTextVocabularyShape (
+        IReadOnlyList<string> canonicalTexts)
+    {
+        JsonElement[] orderedValues = canonicalTexts
+            .Select(
+                static text =>
+                    JsonSerializer.SerializeToElement(text))
+            .ToArray();
+        Array.Sort(orderedValues, JsonElementUtility.CompareCanonical);
+        if (orderedValues.Length == 1)
+        {
+            return new ContractNodeShape(
+                JsonContractNodeKind.Const,
+                JsonContractScalarKind.String,
+                constant: orderedValues[0]);
         }
 
-        JsonElement[] orderedValues = mapping.AllowedValues.ToArray();
-        Array.Sort(orderedValues, JsonElementUtility.CompareCanonical);
         return new ContractNodeShape(
             JsonContractNodeKind.Enum,
-            mapping.ScalarKind.Value,
-            allowedValues: orderedValues
-                .Distinct(JsonElementCanonicalEqualityComparer.Instance)
-                .ToArray());
+            JsonContractScalarKind.String,
+            allowedValues: orderedValues);
     }
 
     private ContractNodeShape ResolveContractType (
@@ -157,15 +195,13 @@ internal sealed class MappedContractShapeResolver
                 surrogateType,
                 jsonPropertyName);
             if (targetType.IsEnum
-                && !VocabularyContractReader.IsVocabulary(targetType)
-                && surrogate.Kind == JsonContractNodeKind.Scalar
                 && surrogate.ScalarKind == JsonContractScalarKind.String)
             {
                 throw InvalidTypeMapping(
                     targetType,
                     jsonPropertyName,
                     resolvedMapping.Mapper,
-                    "A closed enum-to-string contract must be declared through MackySoft.Text.Vocabularies.");
+                    "A closed enum-to-string contract must use a TextVocabulary mapping derived from the mapped enum's MackySoft.Text.Vocabularies declaration.");
             }
 
             return ShapeFromNode(surrogate);
@@ -173,36 +209,6 @@ internal sealed class MappedContractShapeResolver
         finally
         {
             activeMappedTypes.Remove(targetType);
-        }
-    }
-
-    private void EnsureCanonicalVocabularyValues (
-        Type targetType,
-        ResolvedTypeMapping resolvedMapping,
-        string? jsonPropertyName)
-    {
-        if (!VocabularyContractReader.IsVocabulary(targetType))
-        {
-            throw InvalidTypeMapping(
-                targetType,
-                jsonPropertyName,
-                resolvedMapping.Mapper,
-                "A closed enum-to-string contract must be declared through MackySoft.Text.Vocabularies.");
-        }
-
-        IReadOnlyList<JsonElement> canonicalValues =
-            JsonContractTypeMapping
-                .TextVocabulary(targetType)
-                .AllowedValues;
-        if (!CanonicalSetsEqual(
-            canonicalValues,
-            resolvedMapping.Mapping.AllowedValues))
-        {
-            throw InvalidTypeMapping(
-                targetType,
-                jsonPropertyName,
-                resolvedMapping.Mapper,
-                "The mapped enum values differ from the canonical MackySoft.Text.Vocabularies texts.");
         }
     }
 
@@ -234,60 +240,12 @@ internal sealed class MappedContractShapeResolver
             pattern: node.Constraints.Pattern);
     }
 
-    private static bool MatchesScalarKind (
-        JsonElement value,
-        JsonContractScalarKind scalarKind)
-    {
-        return scalarKind switch
-        {
-            JsonContractScalarKind.Null =>
-                value.ValueKind == JsonValueKind.Null,
-            JsonContractScalarKind.Boolean =>
-                value.ValueKind is JsonValueKind.True or JsonValueKind.False,
-            JsonContractScalarKind.Integer =>
-                value.ValueKind == JsonValueKind.Number
-                && value.GetRawText().IndexOf('.') < 0
-                && value.GetRawText().IndexOf('e') < 0
-                && value.GetRawText().IndexOf('E') < 0,
-            JsonContractScalarKind.Number =>
-                value.ValueKind == JsonValueKind.Number,
-            JsonContractScalarKind.String =>
-                value.ValueKind == JsonValueKind.String,
-            _ => false,
-        };
-    }
-
-    private static bool CanonicalSetsEqual (
-        IReadOnlyList<JsonElement> left,
-        IReadOnlyList<JsonElement> right)
-    {
-        JsonElement[] leftValues = left.ToArray();
-        JsonElement[] rightValues = right.ToArray();
-        Array.Sort(leftValues, JsonElementUtility.CompareCanonical);
-        Array.Sort(rightValues, JsonElementUtility.CompareCanonical);
-        if (leftValues.Length != rightValues.Length)
-        {
-            return false;
-        }
-
-        for (int index = 0; index < leftValues.Length; index++)
-        {
-            if (JsonElementUtility.CompareCanonical(
-                leftValues[index],
-                rightValues[index]) != 0)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     private JsonContractGenerationException InvalidTypeMapping (
         Type targetType,
         string? jsonPropertyName,
         IJsonContractTypeMapper mapper,
-        string message)
+        string message,
+        Exception? innerException = null)
     {
         return new JsonContractGenerationException(
             JsonContractGenerationFailureKind.UnsupportedConverter,
@@ -295,6 +253,7 @@ internal sealed class MappedContractShapeResolver
             contractId,
             targetType,
             jsonPropertyName,
-            sourceIds: new[] { mapper.StableId });
+            sourceIds: new[] { mapper.StableId },
+            innerException: innerException);
     }
 }

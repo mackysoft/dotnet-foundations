@@ -1,5 +1,4 @@
 using MackySoft.JsonSchema.Generation.Internal.Determinism;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts;
 
@@ -8,7 +7,6 @@ internal static class MetadataTextContract
     internal static void Validate (
         string value,
         MetadataResolutionTarget target,
-        JsonContractMetadataKind? metadataKind,
         string sourceId,
         string valueName,
         bool rejectWhitespaceOnly = true)
@@ -18,7 +16,6 @@ internal static class MetadataTextContract
         {
             throw MetadataFailure.Invalid(
                 target,
-                metadataKind,
                 new[] { sourceId },
                 rejectWhitespaceOnly
                     ? $"{valueName} must not be null, empty, or whitespace."
@@ -33,7 +30,6 @@ internal static class MetadataTextContract
         {
             throw MetadataFailure.Invalid(
                 target,
-                metadataKind,
                 new[] { sourceId },
                 $"{valueName} contains invalid Unicode.",
                 exception);

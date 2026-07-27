@@ -1044,6 +1044,9 @@
           "domain": [
             "api",
             "extensibility",
+            "metadata-api",
+            "metadata-coordination",
+            "metadata-declarations",
             "model-coordination",
             "model-variants",
             "serializer-metadata",
@@ -1073,6 +1076,7 @@
             "projection-api",
             "schema-projection",
             "semantics",
+            "type-mappings",
             "type-system"
           ]
         },

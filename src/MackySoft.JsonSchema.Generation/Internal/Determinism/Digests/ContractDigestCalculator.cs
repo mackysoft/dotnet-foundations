@@ -17,7 +17,7 @@ internal static class ContractDigestCalculator
     public static string Calculate (
         JsonContractModel model,
         JsonContractGenerationSettings settings,
-        IReadOnlyList<IJsonContractMetadataProvider> metadataProviders,
+        IReadOnlyList<MetadataExtensionRegistration> metadataExtensions,
         IReadOnlyList<IJsonContractTypeMapper> typeMappers,
         IReadOnlyList<IJsonContractModelContributor> modelContributors)
     {
@@ -31,9 +31,9 @@ internal static class ContractDigestCalculator
             throw new ArgumentNullException(nameof(settings));
         }
 
-        if (metadataProviders is null)
+        if (metadataExtensions is null)
         {
-            throw new ArgumentNullException(nameof(metadataProviders));
+            throw new ArgumentNullException(nameof(metadataExtensions));
         }
 
         if (typeMappers is null)
@@ -51,7 +51,7 @@ internal static class ContractDigestCalculator
             byte[] semanticProjection = WriteSemanticProjection(
                 model,
                 settings,
-                metadataProviders,
+                metadataExtensions,
                 typeMappers,
                 modelContributors);
 
@@ -84,7 +84,7 @@ internal static class ContractDigestCalculator
     private static byte[] WriteSemanticProjection (
         JsonContractModel model,
         JsonContractGenerationSettings settings,
-        IReadOnlyList<IJsonContractMetadataProvider> metadataProviders,
+        IReadOnlyList<MetadataExtensionRegistration> metadataExtensions,
         IReadOnlyList<IJsonContractTypeMapper> typeMappers,
         IReadOnlyList<IJsonContractModelContributor> modelContributors)
     {
@@ -105,7 +105,7 @@ internal static class ContractDigestCalculator
         writer.WriteString(
             "referenceProjection",
             Vocabulary.GetText(settings.ReferenceProjection));
-        WriteExtensionIdentities(writer, "metadataProviders", metadataProviders);
+        WriteExtensionIdentities(writer, "metadataExtensions", metadataExtensions);
         WriteExtensionIdentities(writer, "typeMappers", typeMappers);
         WriteExtensionIdentities(writer, "modelContributors", modelContributors);
         writer.WriteEndObject();

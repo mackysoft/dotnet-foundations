@@ -1,6 +1,5 @@
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Validation;
 
@@ -11,7 +10,6 @@ internal static class ContractMetadataFailure
         string contractId,
         Type targetType,
         string? jsonPropertyName,
-        JsonContractMetadataKind? metadataKind,
         IEnumerable<string> sourceIds,
         string message)
     {
@@ -21,7 +19,6 @@ internal static class ContractMetadataFailure
             contractId,
             targetType,
             jsonPropertyName,
-            metadataKind,
             MetadataFailure.SortSourceIds(sourceIds));
     }
 
@@ -29,7 +26,6 @@ internal static class ContractMetadataFailure
         string contractId,
         Type targetType,
         string? jsonPropertyName,
-        JsonContractMetadataKind? metadataKind,
         string message)
     {
         return new JsonContractGenerationException(
@@ -37,7 +33,6 @@ internal static class ContractMetadataFailure
             message,
             contractId,
             targetType,
-            jsonPropertyName,
-            metadataKind);
+            jsonPropertyName);
     }
 }

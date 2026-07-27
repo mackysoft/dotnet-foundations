@@ -3,7 +3,6 @@ using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Internal.Determinism;
 using MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts;
 using MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Shapes;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Validation;
 
@@ -30,7 +29,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                JsonContractMetadataKind.Format,
                 $"Declared format '{declared.Format}' conflicts with serializer-derived format '{shape.Format}'.");
         }
 
@@ -56,7 +54,6 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             shape.MinimumLength,
             declared?.MinimumLength,
-            JsonContractMetadataKind.MinimumLength,
             "length");
         int? maximumLength = ResolveMaximumCount(
             contractId,
@@ -64,7 +61,6 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             shape.MaximumLength,
             declared?.MaximumLength,
-            JsonContractMetadataKind.MaximumLength,
             "length");
         int? minimumItems = ResolveMinimumCount(
             contractId,
@@ -72,7 +68,6 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             shape.MinimumItems,
             declared?.MinimumItems,
-            JsonContractMetadataKind.MinimumItems,
             "item count");
         int? maximumItems = ResolveMaximumCount(
             contractId,
@@ -80,7 +75,6 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             shape.MaximumItems,
             declared?.MaximumItems,
-            JsonContractMetadataKind.MaximumItems,
             "item count");
         int? minimumProperties = ResolveMinimumCount(
             contractId,
@@ -88,7 +82,6 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             shape.MinimumProperties,
             declared?.MinimumProperties,
-            JsonContractMetadataKind.MinimumProperties,
             "property count");
         int? maximumProperties = ResolveMaximumCount(
             contractId,
@@ -96,7 +89,6 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             shape.MaximumProperties,
             declared?.MaximumProperties,
-            JsonContractMetadataKind.MaximumProperties,
             "property count");
         string? pattern = ResolvePattern(
             contractId,
@@ -139,7 +131,6 @@ internal static class ContractConstraintComposer
         string? jsonPropertyName,
         int? structuralMinimum,
         int? declaredMinimum,
-        JsonContractMetadataKind metadataKind,
         string valueKind)
     {
         if (structuralMinimum.HasValue
@@ -150,7 +141,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                metadataKind,
                 $"The declared minimum {valueKind} extends below the structural contract.");
         }
 
@@ -163,7 +153,6 @@ internal static class ContractConstraintComposer
         string? jsonPropertyName,
         int? structuralMaximum,
         int? declaredMaximum,
-        JsonContractMetadataKind metadataKind,
         string valueKind)
     {
         if (structuralMaximum.HasValue
@@ -174,7 +163,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                metadataKind,
                 $"The declared maximum {valueKind} extends above the structural contract.");
         }
 
@@ -199,7 +187,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                JsonContractMetadataKind.Pattern,
                 "The declared pattern cannot be combined with the serializer-derived pattern.");
         }
 
@@ -224,16 +211,14 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             structural,
             declaredMinimum,
-            isExclusive: false,
-            JsonContractMetadataKind.Minimum);
+            isExclusive: false);
         ValidateLowerBound(
             contractId,
             targetType,
             jsonPropertyName,
             structural,
             declaredExclusiveMinimum,
-            isExclusive: true,
-            JsonContractMetadataKind.ExclusiveMinimum);
+            isExclusive: true);
         return new NumericBounds(
             declaredMinimum ?? structuralMinimum,
             declaredExclusiveMinimum ?? structuralExclusiveMinimum);
@@ -257,16 +242,14 @@ internal static class ContractConstraintComposer
             jsonPropertyName,
             structural,
             declaredMaximum,
-            isExclusive: false,
-            JsonContractMetadataKind.Maximum);
+            isExclusive: false);
         ValidateUpperBound(
             contractId,
             targetType,
             jsonPropertyName,
             structural,
             declaredExclusiveMaximum,
-            isExclusive: true,
-            JsonContractMetadataKind.ExclusiveMaximum);
+            isExclusive: true);
         return new NumericBounds(
             declaredMaximum ?? structuralMaximum,
             declaredExclusiveMaximum ?? structuralExclusiveMaximum);
@@ -278,8 +261,7 @@ internal static class ContractConstraintComposer
         string? jsonPropertyName,
         NumericBound? structural,
         JsonElement? declared,
-        bool isExclusive,
-        JsonContractMetadataKind metadataKind)
+        bool isExclusive)
     {
         if (!structural.HasValue || !declared.HasValue)
         {
@@ -298,7 +280,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                metadataKind,
                 "The declared lower bound extends below the structural contract.");
         }
     }
@@ -309,8 +290,7 @@ internal static class ContractConstraintComposer
         string? jsonPropertyName,
         NumericBound? structural,
         JsonElement? declared,
-        bool isExclusive,
-        JsonContractMetadataKind metadataKind)
+        bool isExclusive)
     {
         if (!structural.HasValue || !declared.HasValue)
         {
@@ -329,7 +309,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                metadataKind,
                 "The declared upper bound extends above the structural contract.");
         }
     }
@@ -356,7 +335,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                JsonContractMetadataKind.Minimum,
                 "Numeric bounds can only decorate an integer or number contract.");
         }
 
@@ -373,7 +351,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                JsonContractMetadataKind.MinimumLength,
                 "String constraints can only decorate a string contract.");
         }
 
@@ -384,7 +361,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                JsonContractMetadataKind.MinimumItems,
                 "Item-count constraints can only decorate an array contract.");
         }
 
@@ -397,7 +373,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                JsonContractMetadataKind.MinimumProperties,
                 "Property-count constraints can only decorate an object contract.");
         }
     }
@@ -413,22 +388,19 @@ internal static class ContractConstraintComposer
             targetType,
             jsonPropertyName,
             constraints.MinimumLength,
-            constraints.MaximumLength,
-            JsonContractMetadataKind.MinimumLength);
+            constraints.MaximumLength);
         ValidateIntegerRange(
             contractId,
             targetType,
             jsonPropertyName,
             constraints.MinimumItems,
-            constraints.MaximumItems,
-            JsonContractMetadataKind.MinimumItems);
+            constraints.MaximumItems);
         ValidateIntegerRange(
             contractId,
             targetType,
             jsonPropertyName,
             constraints.MinimumProperties,
-            constraints.MaximumProperties,
-            JsonContractMetadataKind.MinimumProperties);
+            constraints.MaximumProperties);
 
         NumericBound? lower = StrongestLowerBound(
             constraints.Minimum,
@@ -450,7 +422,6 @@ internal static class ContractConstraintComposer
                     contractId,
                     targetType,
                     jsonPropertyName,
-                    JsonContractMetadataKind.Minimum,
                     "The declared numeric lower bound exceeds the upper bound.");
             }
         }
@@ -461,8 +432,7 @@ internal static class ContractConstraintComposer
         Type targetType,
         string? jsonPropertyName,
         int? minimum,
-        int? maximum,
-        JsonContractMetadataKind kind)
+        int? maximum)
     {
         if (minimum < 0 || maximum < 0 || minimum > maximum)
         {
@@ -470,7 +440,6 @@ internal static class ContractConstraintComposer
                 contractId,
                 targetType,
                 jsonPropertyName,
-                kind,
                 "A declared count range is negative or reversed.");
         }
     }

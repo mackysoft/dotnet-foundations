@@ -2,7 +2,6 @@ using System.Collections;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
@@ -68,7 +67,7 @@ public sealed class DocumentPostProcessorTests
                 string definitionId = context.BaseDocument
                     .GetProperty("$defs")
                     .EnumerateObject()
-                    .Single()
+                    .First()
                     .Name;
 
                 return new[]
@@ -77,7 +76,7 @@ public sealed class DocumentPostProcessorTests
                     Extension("/properties/Mode", "property"),
                     Extension("/properties/Items/items", "items"),
                     Extension("/additionalProperties", "additionalProperties"),
-                    Extension("/oneOf/0", "oneOf"),
+                    Extension("/properties/Shape/oneOf/0", "oneOf"),
                     Extension(
                         "/$defs/" + EncodeJsonPointerSegment(definitionId),
                         "definition"),
@@ -113,14 +112,20 @@ public sealed class DocumentPostProcessorTests
                 .GetString());
         Assert.Equal(
             "oneOf",
-            root.GetProperty("oneOf")[0]
+            root.GetProperty("properties")
+                .GetProperty("Shape")
+                .GetProperty("oneOf")[0]
                 .GetProperty("x-target")
                 .GetString());
         Assert.Equal(
             "definition",
             root.GetProperty("$defs")
                 .EnumerateObject()
-                .Single()
+                .Single(
+                    static definition =>
+                        definition.Value.TryGetProperty(
+                            "x-target",
+                            out _))
                 .Value
                 .GetProperty("x-target")
                 .GetString());
@@ -129,9 +134,9 @@ public sealed class DocumentPostProcessorTests
     [Theory]
     [InlineData("/properties")]
     [InlineData("/$defs")]
-    [InlineData("/properties/Revision/const")]
-    [InlineData("/properties/Mode/enum/0")]
-    [InlineData("/examples/0")]
+    [InlineData("/properties/Revision/minimum")]
+    [InlineData("/properties/Mode/type")]
+    [InlineData("/properties/Items/items/type")]
     [Trait("Size", "Small")]
     public void Generate_WhenProcessorTargetsNonSchemaValue_ReportsInvalidDocumentExtension (
         string targetPointer)
@@ -418,25 +423,32 @@ public sealed class DocumentPostProcessorTests
                 });
     }
 
-    [Example(
-        """{"Mode":"fast","Revision":3,"Items":[1],"Nested":{"Value":1}}""")]
-    [OneOfBranch("revision", "Revision")]
-    [OneOfBranch("mode", "Mode")]
     private sealed class StructuredContract
     {
-        [Enum("\"fast\"", "\"safe\"")]
         public string Mode { get; set; } = string.Empty;
 
-        [Const("3")]
         public int Revision { get; set; }
 
         public int[] Items { get; set; } = Array.Empty<int>();
 
         public NestedContract Nested { get; set; } = new();
 
+        public ShapeContract Shape { get; set; } = new CircleContract();
+
         [JsonExtensionData]
         public Dictionary<string, JsonElement> Additional { get; set; } =
             new();
+    }
+
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+    [JsonDerivedType(typeof(CircleContract), "circle")]
+    private abstract class ShapeContract
+    {
+    }
+
+    private sealed class CircleContract : ShapeContract
+    {
+        public int Radius { get; set; }
     }
 
     private sealed class NestedContract

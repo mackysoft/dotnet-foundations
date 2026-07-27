@@ -316,16 +316,11 @@ internal static class ContractValueAcceptanceEvaluator
         int matches = 0;
         foreach (JsonContractVariant variant in variants)
         {
-            bool accepts = variant.Value is not null
-                ? AcceptsNode(
+            if (AcceptsNode(
                     variant.Value,
                     value,
                     referenceResolver,
-                    activeReferences)
-                : value.ValueKind == JsonValueKind.Object
-                    && variant.RequiredProperties.All(
-                        required => value.TryGetProperty(required, out _));
-            if (accepts)
+                    activeReferences))
             {
                 matches++;
             }

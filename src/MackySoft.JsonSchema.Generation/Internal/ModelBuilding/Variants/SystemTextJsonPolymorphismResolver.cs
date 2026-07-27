@@ -113,9 +113,7 @@ internal sealed class SystemTextJsonPolymorphismResolver
                 new JsonContractVariant(
                     GetVariantName(branch.DiscriminatorValue),
                     value,
-                    Array.Empty<string>(),
-                    branch.DiscriminatorValue,
-                    EmptyAnnotations()));
+                    branch.DiscriminatorValue));
         }
 
         return new ContractNodeShape(
@@ -419,14 +417,6 @@ internal sealed class SystemTextJsonPolymorphismResolver
     private static bool IsReservedMetadataPropertyName (string propertyName)
     {
         return propertyName is "$id" or "$ref" or "$values";
-    }
-
-    private static JsonContractAnnotations EmptyAnnotations ()
-    {
-        return new JsonContractAnnotations(
-            title: null,
-            description: null,
-            Array.Empty<JsonElement>());
     }
 
     private sealed class PolymorphicBranch

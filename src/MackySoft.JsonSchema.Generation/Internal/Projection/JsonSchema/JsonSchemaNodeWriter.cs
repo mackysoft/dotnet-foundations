@@ -126,22 +126,6 @@ internal static class JsonSchemaNodeWriter
         {
             WriteObjectClosure(schema, settings.ObjectClosure);
         }
-
-        if (node.Variants.Count != 0)
-        {
-            var variants = new JsonArray();
-            foreach (JsonContractVariant variant in node.Variants)
-            {
-                variants.Add(CreatePropertyRequirementVariantSchema(node, variant));
-            }
-
-            if (node.IsNullable)
-            {
-                variants.Add(CreateNullSchema());
-            }
-
-            schema.Add("oneOf", variants);
-        }
     }
 
     private static void WriteDictionarySchema (
@@ -261,13 +245,15 @@ internal static class JsonSchemaNodeWriter
         JsonContractNode node,
         JsonContractGenerationSettings settings)
     {
+        JsonContractDiscriminator discriminator = node.Discriminator
+            ?? throw MissingNodeMember(node, nameof(node.Discriminator));
         var variants = new JsonArray();
         foreach (JsonContractVariant variant in node.Variants)
         {
             variants.Add(
                 CreatePolymorphicVariantSchema(
                     variant,
-                    node.Discriminator,
+                    discriminator,
                     settings));
         }
 
@@ -279,65 +265,16 @@ internal static class JsonSchemaNodeWriter
         schema.Add("oneOf", variants);
     }
 
-    private static JsonObject CreatePropertyRequirementVariantSchema (
-        JsonContractNode containingObject,
-        JsonContractVariant variant)
-    {
-        var schema = new JsonObject();
-        WriteAnnotations(schema, variant.Annotations);
-        WriteType(
-            schema,
-            Vocabulary.GetText(JsonContractNodeKind.Object),
-            isNullable: false);
-
-        IEnumerable<string> requiredProperties = variant.RequiredProperties;
-        JsonContractDiscriminator? discriminator = containingObject.Discriminator;
-        if (discriminator is not null && variant.DiscriminatorValue.HasValue)
-        {
-            schema.Add(
-                "properties",
-                CreateDiscriminatorProperties(
-                    discriminator.PropertyName,
-                    variant.DiscriminatorValue.Value));
-
-            bool discriminatorIsRequired = containingObject.Properties.Any(
-                property =>
-                    property.IsRequired
-                    && string.Equals(
-                        property.Name,
-                        discriminator.PropertyName,
-                        StringComparison.Ordinal));
-            if (discriminatorIsRequired)
-            {
-                requiredProperties = requiredProperties.Concat(
-                    new[] { discriminator.PropertyName });
-            }
-        }
-
-        WriteRequiredProperties(schema, requiredProperties);
-        return schema;
-    }
-
     private static JsonObject CreatePolymorphicVariantSchema (
         JsonContractVariant variant,
-        JsonContractDiscriminator? discriminator,
+        JsonContractDiscriminator discriminator,
         JsonContractGenerationSettings settings)
     {
-        JsonObject schema = variant.Value is null
-            ? new JsonObject()
-            : Create(variant.Value, settings);
-
-        WriteAnnotations(schema, variant.Annotations);
-        AddRequiredProperties(schema, variant.RequiredProperties);
-
-        if (discriminator is not null && variant.DiscriminatorValue.HasValue)
-        {
-            AddDiscriminatorConstraint(
-                schema,
-                discriminator.PropertyName,
-                variant.DiscriminatorValue.Value,
-                requireProperty: true);
-        }
+        JsonObject schema = Create(variant.Value, settings);
+        AddDiscriminatorConstraint(
+            schema,
+            discriminator.PropertyName,
+            variant.DiscriminatorValue);
 
         return schema;
     }
@@ -345,8 +282,7 @@ internal static class JsonSchemaNodeWriter
     private static void AddDiscriminatorConstraint (
         JsonObject schema,
         string propertyName,
-        JsonElement value,
-        bool requireProperty)
+        JsonElement value)
     {
         JsonObject properties;
         if (schema["properties"] is JsonObject existingProperties)
@@ -380,23 +316,7 @@ internal static class JsonSchemaNodeWriter
             properties[propertyName] = constantSchema;
         }
 
-        if (requireProperty)
-        {
-            AddRequiredProperties(schema, new[] { propertyName });
-        }
-    }
-
-    private static JsonObject CreateDiscriminatorProperties (
-        string propertyName,
-        JsonElement value)
-    {
-        return new JsonObject
-        {
-            [propertyName] = new JsonObject
-            {
-                ["const"] = ToJsonNode(value),
-            },
-        };
+        AddRequiredProperties(schema, new[] { propertyName });
     }
 
     private static void WriteObjectClosure (

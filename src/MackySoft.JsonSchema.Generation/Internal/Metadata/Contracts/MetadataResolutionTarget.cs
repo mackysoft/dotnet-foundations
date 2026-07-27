@@ -5,13 +5,11 @@ internal readonly struct MetadataResolutionTarget
     internal MetadataResolutionTarget (
         string contractId,
         Type targetType,
-        string? jsonPropertyName,
-        bool isMember)
+        string? jsonPropertyName)
     {
         ContractId = contractId;
         TargetType = targetType;
         JsonPropertyName = jsonPropertyName;
-        IsMember = isMember;
     }
 
     internal string ContractId { get; }
@@ -19,6 +17,4 @@ internal readonly struct MetadataResolutionTarget
     internal Type TargetType { get; }
 
     internal string? JsonPropertyName { get; }
-
-    internal bool IsMember { get; }
 }

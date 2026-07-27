@@ -90,16 +90,10 @@ internal static class VocabularyContractReader
         JsonSerializerOptions serializerOptions,
         JsonConverter? propertyConverter)
     {
-        JsonSerializerOptions effectiveOptions;
-        if (propertyConverter is null)
-        {
-            effectiveOptions = serializerOptions;
-        }
-        else
-        {
-            effectiveOptions = new JsonSerializerOptions(serializerOptions);
-            effectiveOptions.Converters.Insert(0, propertyConverter);
-        }
+        JsonSerializerOptions effectiveOptions =
+            CreateEffectiveOptions(
+                serializerOptions,
+                propertyConverter);
 
         string json = JsonSerializer.Serialize(
             value,
@@ -107,6 +101,20 @@ internal static class VocabularyContractReader
             effectiveOptions);
         using JsonDocument document = JsonDocument.Parse(json);
         return document.RootElement.Clone();
+    }
+
+    internal static JsonSerializerOptions CreateEffectiveOptions (
+        JsonSerializerOptions serializerOptions,
+        JsonConverter? propertyConverter)
+    {
+        if (propertyConverter is null)
+        {
+            return serializerOptions;
+        }
+
+        var effectiveOptions = new JsonSerializerOptions(serializerOptions);
+        effectiveOptions.Converters.Insert(0, propertyConverter);
+        return effectiveOptions;
     }
 
     private static IEnumerable<object> GetRepresentativeValues (Type enumType)
