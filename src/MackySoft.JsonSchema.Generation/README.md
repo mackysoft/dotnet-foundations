@@ -14,11 +14,11 @@ The source responsibility and dependency boundaries are documented in
 Install an exact package version:
 
 ```bash
-dotnet add package MackySoft.JsonSchema.Generation --version 0.1.0
+dotnet add package MackySoft.JsonSchema.Generation --version "[0.2.0]"
 ```
 
 ```xml
-<PackageReference Include="MackySoft.JsonSchema.Generation" Version="[0.1.0]" />
+<PackageReference Include="MackySoft.JsonSchema.Generation" Version="[0.2.0]" />
 ```
 
 If the runtime serializer writes a `MackySoft.Text.Vocabularies` enum as its
@@ -71,17 +71,39 @@ Pass the same `JsonSerializerOptions` behavior and resolver that the product use
 
 Product-neutral attributes add metadata that becomes part of the model and both projections:
 
-- `JsonContractTitleAttribute`, `JsonContractDescriptionAttribute`, and `JsonContractExampleAttribute`;
-- `JsonContractRequiredAttribute` and `JsonContractAllowNullAttribute`;
-- `JsonContractConstAttribute` and `JsonContractEnumAttribute`;
-- `JsonContractRangeAttribute`, `JsonContractLengthAttribute`, `JsonContractPatternAttribute`, `JsonContractItemCountAttribute`, and `JsonContractPropertyCountAttribute`;
-- `JsonContractOneOfBranchAttribute` and `JsonContractDiscriminatorAttribute`;
-- `JsonContractAnyValueAttribute` for an explicitly unconstrained JSON value.
+- `TitleAttribute`, `DescriptionAttribute`, and `ExampleAttribute`;
+- `RequiredAttribute` and `AllowNullAttribute`;
+- `ConstAttribute` and `EnumAttribute`;
+- `RangeAttribute`, `LengthAttribute`, `PatternAttribute`, `ItemCountAttribute`, and `PropertyCountAttribute`;
+- `OneOfBranchAttribute` and `DiscriminatorAttribute`;
+- `AnyValueAttribute` for an explicitly unconstrained JSON value.
 
 Metadata cannot silently override the serializer contract. An explicit required or nullability assertion that disagrees with the resolved CLR and `JsonTypeInfo` contract fails generation.
-At type scope, `JsonContractAllowNullAttribute` can assert that a reference-type
+At type scope, `AllowNullAttribute` can assert that a reference-type
 root accepts JSON `null`; it does not make a non-nullable serialized member of
 that type nullable.
+
+The attributes are declared in
+`MackySoft.JsonSchema.Generation.Annotations`. A namespace alias keeps their
+contract context explicit and avoids collisions with framework attributes:
+
+```csharp
+using System.Text.Json.Serialization;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
+
+sealed class WidgetContract
+{
+    [JsonRequired]
+    [Contract.Required]
+    [Contract.Description("The stable widget name.")]
+    public string Name { get; set; } = string.Empty;
+}
+```
+
+Version 0.2.0 removes the 0.1.0 `JsonContract*Attribute` type names. It does
+not provide compatibility aliases; consumers must use the names listed above.
+Attribute-backed diagnostic source IDs therefore use the new fully qualified
+attribute type names.
 
 Enums declared by `MackySoft.Text.Vocabularies` use their canonical vocabulary
 texts only when an explicit type mapper recognizes the custom converter that
@@ -154,7 +176,6 @@ constraints, but a different title or description or a wider constraint fails
 as typed metadata diagnostics. Null acceptance continues to come from the
 mapped source and its use site.
 
-Attributes are declared in `MackySoft.JsonSchema.Generation.Annotations`.
 The immutable model is exposed from
 `MackySoft.JsonSchema.Generation.ContractModel`; declarative provider values are
 exposed separately from `MackySoft.JsonSchema.Generation.Metadata`.
@@ -195,7 +216,7 @@ current time, network state, mutable ambient state, or unordered live
 collections. Stable ordering by the generator establishes deterministic
 evaluation; it is not a precedence rule for resolving different declarations.
 
-## Type Metadata Projection in 0.1.0
+## Type Metadata Projection in 0.2.0
 
 `GetTypeMetadataUtf8()` returns UTF-8 JSON without a byte-order mark. The root
 object contains these required properties in this order:
@@ -232,9 +253,9 @@ empty. `properties`, `variants`, `allowedValues`, `requiredProperties`,
 `examples`, `definitions`, and `contributions` preserve the deterministic order
 of their corresponding JSON Contract Model collections.
 
-The 0.1.0 projection has no independent `formatVersion` property. Its
+The 0.2.0 projection has no independent `formatVersion` property. Its
 compatibility boundary is the exact `MackySoft.JsonSchema.Generation` NuGet
-version. A consumer pinned to exact version 0.1.0 may rely on this shape.
+version. A consumer pinned to exact version 0.2.0 may rely on this shape.
 Upgrading the package requires an explicit consumer review of metadata shape
 and semantics; a tolerant JSON parser alone does not establish compatibility.
 
@@ -289,7 +310,7 @@ string or integer discriminator, and each derived contract must be an object
 whose properties do not collide with the discriminator. A concrete or fallback
 base representation is not inferred as an additional branch.
 
-`JsonContractPatternAttribute` accepts the interoperable ECMA-262 token subset
+`PatternAttribute` accepts the interoperable ECMA-262 token subset
 recommended by JSON Schema Draft 2020-12: individual characters, simple and
 range character classes, simple and range quantifiers (including lazy forms),
 `^` and `$`, plain groups, alternation, and standard escaped characters.

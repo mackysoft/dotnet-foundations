@@ -41,7 +41,7 @@ public sealed class JsonContractGenerationResult
     /// <returns> A new byte array that does not share mutable storage with this result. </returns>
     /// <remarks>
     /// <para>
-    /// In package version 0.1.0 the root object always contains, in order,
+    /// In package version 0.2.0 the root object always contains, in order,
     /// <c>contractId</c>, <c>contractDigest</c>, <c>schemaName</c>, <c>root</c>,
     /// <c>definitions</c>, and <c>contributions</c>.
     /// </para>
@@ -72,8 +72,8 @@ public sealed class JsonContractGenerationResult
     /// corresponding <see cref="JsonContractModel" /> collections.
     /// </para>
     /// <para>
-    /// Version 0.1.0 emits no independent metadata-format version field.
-    /// Consumers pinning exact package version 0.1.0 may depend on this shape;
+    /// Version 0.2.0 emits no independent metadata-format version field.
+    /// Consumers pinning exact package version 0.2.0 may depend on this shape;
     /// compatibility with another package version requires an explicit upgrade
     /// review by the consumer.
     /// </para>
