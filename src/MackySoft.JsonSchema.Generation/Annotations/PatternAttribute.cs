@@ -14,7 +14,7 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Class
     | AttributeTargets.Struct,
     Inherited = true)]
-public sealed class JsonContractPatternAttribute : Attribute
+public sealed class PatternAttribute : Attribute
 {
     /// <summary> Initializes a pattern declaration. </summary>
     /// <param name="pattern">
@@ -22,7 +22,7 @@ public sealed class JsonContractPatternAttribute : Attribute
     /// range quantifiers, anchors, grouping, alternation, and standard escapes.
     /// </param>
     /// <exception cref="ArgumentNullException"> <paramref name="pattern" /> is <see langword="null" />. </exception>
-    public JsonContractPatternAttribute (string pattern)
+    public PatternAttribute (string pattern)
     {
         Pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
     }

@@ -1,6 +1,6 @@
 namespace MackySoft.JsonSchema.Generation.Annotations;
 
-/// <summary> Declares one JSON example for a contract type or member. </summary>
+/// <summary> Restricts a contract value to one declared JSON constant. </summary>
 [AttributeUsage(
     AttributeTargets.Class
     | AttributeTargets.Struct
@@ -8,14 +8,13 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Interface
     | AttributeTargets.Property
     | AttributeTargets.Field,
-    AllowMultiple = true,
     Inherited = true)]
-public sealed class JsonContractExampleAttribute : Attribute
+public sealed class ConstAttribute : Attribute
 {
-    /// <summary> Initializes a JSON example declaration. </summary>
+    /// <summary> Initializes a constant declaration. </summary>
     /// <param name="json"> JSON text parsed by the contract generator. </param>
     /// <exception cref="ArgumentNullException"> <paramref name="json" /> is <see langword="null" />. </exception>
-    public JsonContractExampleAttribute (string json)
+    public ConstAttribute (string json)
     {
         Json = json ?? throw new ArgumentNullException(nameof(json));
     }

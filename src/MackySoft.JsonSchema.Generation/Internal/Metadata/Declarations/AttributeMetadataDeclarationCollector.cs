@@ -57,17 +57,17 @@ internal static class AttributeMetadataDeclarationCollector
     {
         switch (attribute)
         {
-            case JsonContractTitleAttribute title:
+            case TitleAttribute title:
                 declarations.Add(sourceId, JsonContractMetadata.Title(title.Title));
                 break;
 
-            case JsonContractDescriptionAttribute description:
+            case DescriptionAttribute description:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.Description(description.Description));
                 break;
 
-            case JsonContractExampleAttribute example:
+            case ExampleAttribute example:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.Example(
@@ -78,15 +78,15 @@ internal static class AttributeMetadataDeclarationCollector
                             sourceId)));
                 break;
 
-            case JsonContractRequiredAttribute:
+            case RequiredAttribute:
                 declarations.Add(sourceId, JsonContractMetadata.Required());
                 break;
 
-            case JsonContractAllowNullAttribute:
+            case AllowNullAttribute:
                 declarations.Add(sourceId, JsonContractMetadata.AllowNull());
                 break;
 
-            case JsonContractConstAttribute constant:
+            case ConstAttribute constant:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.Const(
@@ -97,7 +97,7 @@ internal static class AttributeMetadataDeclarationCollector
                             sourceId)));
                 break;
 
-            case JsonContractEnumAttribute finiteSet:
+            case EnumAttribute finiteSet:
                 foreach (string jsonValue in finiteSet.JsonValues)
                 {
                     declarations.Add(
@@ -111,7 +111,7 @@ internal static class AttributeMetadataDeclarationCollector
                 }
                 break;
 
-            case JsonContractRangeAttribute range:
+            case RangeAttribute range:
                 CollectRangeAttribute(
                     target,
                     range,
@@ -119,7 +119,7 @@ internal static class AttributeMetadataDeclarationCollector
                     declarations);
                 break;
 
-            case JsonContractLengthAttribute length:
+            case LengthAttribute length:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.MinimumLength(length.Minimum));
@@ -128,13 +128,13 @@ internal static class AttributeMetadataDeclarationCollector
                     JsonContractMetadata.MaximumLength(length.Maximum));
                 break;
 
-            case JsonContractPatternAttribute pattern:
+            case PatternAttribute pattern:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.Pattern(pattern.Pattern));
                 break;
 
-            case JsonContractItemCountAttribute itemCount:
+            case ItemCountAttribute itemCount:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.MinimumItems(itemCount.Minimum));
@@ -143,7 +143,7 @@ internal static class AttributeMetadataDeclarationCollector
                     JsonContractMetadata.MaximumItems(itemCount.Maximum));
                 break;
 
-            case JsonContractPropertyCountAttribute propertyCount:
+            case PropertyCountAttribute propertyCount:
                 declarations.Add(
                     sourceId,
                     JsonContractMetadata.MinimumProperties(propertyCount.Minimum));
@@ -152,11 +152,11 @@ internal static class AttributeMetadataDeclarationCollector
                     JsonContractMetadata.MaximumProperties(propertyCount.Maximum));
                 break;
 
-            case JsonContractAnyValueAttribute:
+            case AnyValueAttribute:
                 declarations.Add(sourceId, JsonContractMetadata.Arbitrary());
                 break;
 
-            case JsonContractOneOfBranchAttribute branch:
+            case OneOfBranchAttribute branch:
                 declarations.Add(
                     new ResolvedContractMetadata.OneOfBranchProvenance(
                         sourceId,
@@ -166,7 +166,7 @@ internal static class AttributeMetadataDeclarationCollector
                             sourceId)));
                 break;
 
-            case JsonContractDiscriminatorAttribute discriminator:
+            case DiscriminatorAttribute discriminator:
                 MetadataResolutionTarget typeTarget = ForTypeMetadata(target);
                 MetadataTextContract.Validate(
                     discriminator.PropertyName,
@@ -184,7 +184,7 @@ internal static class AttributeMetadataDeclarationCollector
 
     private static void CollectRangeAttribute (
         MetadataResolutionTarget target,
-        JsonContractRangeAttribute range,
+        RangeAttribute range,
         string sourceId,
         MetadataDeclarationSet declarations)
     {

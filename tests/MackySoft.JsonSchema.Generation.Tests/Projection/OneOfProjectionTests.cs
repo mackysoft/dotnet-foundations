@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Projection;
 
@@ -127,14 +127,14 @@ public sealed class OneOfProjectionTests
             result.Model.Root.Variants[0].Annotations.Description);
     }
 
-    [JsonContractDiscriminator("kind")]
-    [JsonContractOneOfBranch(
+    [Contract.Discriminator("kind")]
+    [Contract.OneOfBranch(
         "left",
         "leftValue",
         DiscriminatorValueJson = "\"left\"",
         Description = "Selects the left value.",
         ExampleJson = """{"kind":"left","leftValue":1}""")]
-    [JsonContractOneOfBranch(
+    [Contract.OneOfBranch(
         "right",
         "rightValue",
         DiscriminatorValueJson = "\"right\"",
@@ -143,7 +143,7 @@ public sealed class OneOfProjectionTests
     private sealed class TaggedContract
     {
         [JsonRequired]
-        [JsonContractRequired]
+        [Contract.Required]
         [JsonPropertyName("kind")]
         public string Kind { get; set; } = string.Empty;
 

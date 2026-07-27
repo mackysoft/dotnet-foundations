@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Projection;
 
@@ -49,7 +49,7 @@ public sealed class ArbitraryValueProjectionTests
 
     private sealed class ArbitraryContract
     {
-        [JsonContractAnyValue]
+        [Contract.AnyValue]
         public JsonElement Payload { get; set; }
     }
 }

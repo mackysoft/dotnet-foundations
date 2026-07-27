@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Projection;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
 
@@ -394,7 +394,7 @@ public sealed class ContractValueValidationTests
                 JsonSerializer.SerializeToElement(value)));
     }
 
-    [JsonContractConst("{}")]
+    [Contract.Const("{}")]
     private sealed class InvalidObjectConstant
     {
         [JsonRequired]
@@ -404,71 +404,71 @@ public sealed class ContractValueValidationTests
 
     private sealed class InvalidPatternConstant
     {
-        [JsonContractConst("\"123\"")]
-        [JsonContractPattern("^[a-z]+$")]
+        [Contract.Const("\"123\"")]
+        [Contract.Pattern("^[a-z]+$")]
         public string Value { get; set; } = string.Empty;
     }
 
     private sealed class InvalidPattern
     {
-        [JsonContractPattern("[")]
+        [Contract.Pattern("[")]
         public string Value { get; set; } = string.Empty;
     }
 
     private sealed class UnsafeNumberConstant
     {
-        [JsonContractConst("9007199254740993")]
+        [Contract.Const("9007199254740993")]
         public long Value { get; set; }
     }
 
     private sealed class OutOfRangeLongConstant
     {
-        [JsonContractConst("9223372036854776000")]
+        [Contract.Const("9223372036854776000")]
         public long Value { get; set; }
     }
 
     private sealed class OutOfRangeUInt64Constant
     {
-        [JsonContractConst("18446744073709552000")]
+        [Contract.Const("18446744073709552000")]
         public ulong Value { get; set; }
     }
 
     private sealed class OutOfRangeDecimalConstant
     {
-        [JsonContractConst("8e28")]
+        [Contract.Const("8e28")]
         public decimal Value { get; set; }
     }
 
     private sealed class OutOfRangeDecimalEnum
     {
-        [JsonContractEnum("-8e28", "0")]
+        [Contract.Enum("-8e28", "0")]
         public decimal Value { get; set; }
     }
 
     private sealed class FractionalIntegerConstant
     {
-        [JsonContractConst("1.0")]
+        [Contract.Const("1.0")]
         public int Value { get; set; }
     }
 
     private sealed class ExponentIntegerEnum
     {
-        [JsonContractEnum("1e0", "2")]
+        [Contract.Enum("1e0", "2")]
         public int Value { get; set; }
     }
 
     private sealed class StructuredConstantContract
     {
-        [JsonContractConst(
+        [Contract.Const(
             """{"Value":1,"Next":{"Value":2,"Next":null}}""")]
         public RecursiveValue Head { get; set; } = new();
 
-        [JsonContractConst("""[{"Value":3,"Next":null}]""")]
+        [Contract.Const("""[{"Value":3,"Next":null}]""")]
         public RecursiveValue[] Items { get; set; } =
             Array.Empty<RecursiveValue>();
     }
 
-    [JsonContractConst("""{"Head":{"Value":1,"Next":null}}""")]
+    [Contract.Const("""{"Head":{"Value":1,"Next":null}}""")]
     private sealed class RootStructuredConstant
     {
         public RecursiveValue Head { get; set; } = new();
@@ -476,12 +476,12 @@ public sealed class ContractValueValidationTests
 
     private sealed class StructuredEnumContract
     {
-        [JsonContractEnum(
+        [Contract.Enum(
             """{"Value":1,"Next":null}""",
             """{"Value":2,"Next":null}""")]
         public RecursiveValue Choice { get; set; } = new();
 
-        [JsonContractEnum(
+        [Contract.Enum(
             "1",
             "\"one\"",
             """{"kind":"object"}""",
@@ -491,7 +491,7 @@ public sealed class ContractValueValidationTests
 
     private sealed class InvalidStructuredEnum
     {
-        [JsonContractEnum("""{"Unknown":1}""")]
+        [Contract.Enum("""{"Unknown":1}""")]
         public RecursiveValue Choice { get; set; } = new();
     }
 
@@ -502,16 +502,16 @@ public sealed class ContractValueValidationTests
         public RecursiveValue? Next { get; set; }
     }
 
-    [JsonContractConst("""{"Value":1}""")]
-    [JsonContractOneOfBranch("value", "Value")]
+    [Contract.Const("""{"Value":1}""")]
+    [Contract.OneOfBranch("value", "Value")]
     private sealed class ConstOneOfConflict
     {
         public int Value { get; set; }
     }
 
-    [JsonContractEnum("""{"Kind":"alpha"}""")]
-    [JsonContractDiscriminator("Kind")]
-    [JsonContractOneOfBranch(
+    [Contract.Enum("""{"Kind":"alpha"}""")]
+    [Contract.Discriminator("Kind")]
+    [Contract.OneOfBranch(
         "alpha",
         "Kind",
         DiscriminatorValueJson = "\"alpha\"")]

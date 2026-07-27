@@ -7,13 +7,13 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Class
     | AttributeTargets.Struct,
     Inherited = true)]
-public sealed class JsonContractRangeAttribute : Attribute
+public sealed class RangeAttribute : Attribute
 {
     /// <summary> Initializes a numeric range declaration. </summary>
     /// <param name="minimumJson"> The lower-bound JSON number text, or <see langword="null" /> when unbounded. </param>
     /// <param name="maximumJson"> The upper-bound JSON number text, or <see langword="null" /> when unbounded. </param>
     /// <exception cref="ArgumentException"> Both bounds are <see langword="null" />. </exception>
-    public JsonContractRangeAttribute (
+    public RangeAttribute (
         string? minimumJson,
         string? maximumJson)
     {

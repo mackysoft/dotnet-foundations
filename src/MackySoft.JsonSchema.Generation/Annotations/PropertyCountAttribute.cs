@@ -7,13 +7,13 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Class
     | AttributeTargets.Struct,
     Inherited = true)]
-public sealed class JsonContractPropertyCountAttribute : Attribute
+public sealed class PropertyCountAttribute : Attribute
 {
     /// <summary> Initializes an object property-count declaration. </summary>
     /// <param name="minimum"> The non-negative minimum property count. </param>
     /// <param name="maximum"> The maximum count, which must not be less than <paramref name="minimum" />. </param>
     /// <exception cref="ArgumentOutOfRangeException"> A bound is negative or the bounds are reversed. </exception>
-    public JsonContractPropertyCountAttribute (
+    public PropertyCountAttribute (
         int minimum,
         int maximum)
     {

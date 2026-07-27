@@ -9,12 +9,12 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Property
     | AttributeTargets.Field,
     Inherited = true)]
-public sealed class JsonContractDescriptionAttribute : Attribute
+public sealed class DescriptionAttribute : Attribute
 {
     /// <summary> Initializes a description declaration. </summary>
     /// <param name="description"> Non-empty explanatory text. </param>
     /// <exception cref="ArgumentException"> <paramref name="description" /> is empty or whitespace. </exception>
-    public JsonContractDescriptionAttribute (string description)
+    public DescriptionAttribute (string description)
     {
         if (string.IsNullOrWhiteSpace(description))
         {

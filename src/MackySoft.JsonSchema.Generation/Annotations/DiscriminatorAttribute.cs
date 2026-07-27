@@ -4,12 +4,12 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
 [AttributeUsage(
     AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Interface,
     Inherited = true)]
-public sealed class JsonContractDiscriminatorAttribute : Attribute
+public sealed class DiscriminatorAttribute : Attribute
 {
     /// <summary> Initializes a discriminator declaration. </summary>
     /// <param name="propertyName"> The exact non-empty serialized JSON property name. </param>
     /// <exception cref="ArgumentException"> <paramref name="propertyName" /> is empty or whitespace. </exception>
-    public JsonContractDiscriminatorAttribute (string propertyName)
+    public DiscriminatorAttribute (string propertyName)
     {
         if (string.IsNullOrWhiteSpace(propertyName))
         {

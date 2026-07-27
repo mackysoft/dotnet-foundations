@@ -1,10 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
+using Contract = MackySoft.JsonSchema.Generation.Annotations;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
 
@@ -64,7 +64,7 @@ public sealed class ExactNumberSemanticsTests
 
     private sealed class HugeExponentDecimalConstant
     {
-        [JsonContractConst("1e999999999999999999999999999999")]
+        [Contract.Const("1e999999999999999999999999999999")]
         public decimal Value { get; set; }
     }
 

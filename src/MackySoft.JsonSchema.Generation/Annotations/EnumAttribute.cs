@@ -11,13 +11,13 @@ namespace MackySoft.JsonSchema.Generation.Annotations;
     | AttributeTargets.Property
     | AttributeTargets.Field,
     Inherited = true)]
-public sealed class JsonContractEnumAttribute : Attribute
+public sealed class EnumAttribute : Attribute
 {
     /// <summary> Initializes an allowed-value declaration. </summary>
     /// <param name="jsonValues"> One or more JSON values parsed by the contract generator. </param>
     /// <exception cref="ArgumentNullException"> <paramref name="jsonValues" /> is <see langword="null" />. </exception>
     /// <exception cref="ArgumentException"> No value was supplied, or the collection contains <see langword="null" />. </exception>
-    public JsonContractEnumAttribute (params string[] jsonValues)
+    public EnumAttribute (params string[] jsonValues)
     {
         if (jsonValues is null)
         {
