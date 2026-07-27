@@ -165,30 +165,15 @@ internal static class ContractModelSemanticWriter
             writer.WriteStartObject();
             writer.WriteString("name", variant.Name);
             writer.WritePropertyName("value");
-            WriteNullableNode(
+            WriteNode(
                 writer,
                 variant.Value,
                 encodeJsonValueSemantics);
 
-            writer.WritePropertyName("requiredProperties");
-            writer.WriteStartArray();
-            foreach (string requiredProperty in variant.RequiredProperties)
-            {
-                writer.WriteStringValue(requiredProperty);
-            }
-
-            writer.WriteEndArray();
-
             writer.WritePropertyName("discriminatorValue");
-            WriteNullableJsonElement(
+            WriteJsonElement(
                 writer,
                 variant.DiscriminatorValue,
-                encodeJsonValueSemantics);
-
-            writer.WritePropertyName("annotations");
-            WriteAnnotations(
-                writer,
-                variant.Annotations,
                 encodeJsonValueSemantics);
             writer.WriteEndObject();
         }

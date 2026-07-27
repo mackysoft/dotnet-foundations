@@ -22,15 +22,13 @@ public sealed class PatternContractTests
             Assert.Throws<JsonContractGenerationException>(
                 () => GenerationTestHarness.Generate<PatternContract>(
                     "tests.dotnet-only-pattern",
-                    metadataProviders: new[]
-                    {
-                        new PatternMetadataProvider(pattern),
-                    }));
+                    metadataRegistry: new JsonContractMetadataRegistry()
+                        .RegisterProvider(
+                            new PatternMetadataProvider(pattern))));
 
         Assert.Equal(
             JsonContractGenerationFailureKind.InvalidMetadataValue,
             exception.FailureKind);
-        Assert.Equal(JsonContractMetadataKind.Pattern, exception.MetadataKind);
     }
 
     [Fact]
@@ -57,7 +55,8 @@ public sealed class PatternContractTests
         public string Value { get; set; } = string.Empty;
     }
 
-    private sealed class PatternMetadataProvider : IJsonContractMetadataProvider
+    private sealed class PatternMetadataProvider
+        : IJsonContractMetadataProvider<string>
     {
         private readonly string pattern;
 
@@ -70,12 +69,14 @@ public sealed class PatternContractTests
 
         public string ContractVersion => "1";
 
-        public IReadOnlyList<JsonContractMetadata> GetMetadata (
-            JsonContractMetadataContext context)
+        public void ProvideMetadata (
+            JsonContractMetadataContext<string> context,
+            JsonContractMetadataBuilder<string> builder)
         {
-            return context.JsonPropertyName == "Value"
-                ? new[] { JsonContractMetadata.Pattern(pattern) }
-                : Array.Empty<JsonContractMetadata>();
+            if (context.PropertyInfo?.Name == "Value")
+            {
+                builder.SetPattern(pattern);
+            }
         }
     }
 }

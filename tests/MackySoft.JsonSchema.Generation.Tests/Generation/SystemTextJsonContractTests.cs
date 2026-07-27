@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
+using MackySoft.JsonSchema.Generation.Extensibility;
 using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
@@ -84,43 +84,7 @@ public sealed class SystemTextJsonContractTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenRequiredMetadataDisagreesWithSerializer_ReportsConflict ()
-    {
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => GenerationTestHarness.Generate<
-                    RequiredMetadataConflictContract>(
-                        "tests.required-metadata-conflict"));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.ConflictingMetadata,
-            exception.FailureKind);
-        Assert.Equal(typeof(int), exception.TargetType);
-        Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Required, exception.MetadataKind);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenAllowNullMetadataDisagreesWithClrNullability_ReportsConflict ()
-    {
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => GenerationTestHarness.Generate<
-                    NullMetadataConflictContract>(
-                        "tests.null-metadata-conflict"));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.ConflictingMetadata,
-            exception.FailureKind);
-        Assert.Equal(typeof(string), exception.TargetType);
-        Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.AllowNull, exception.MetadataKind);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_TypeAllowNullMakesReferenceRootNullableInBothProjections ()
+    public void Generate_ReferenceRootUsesSerializerNullAcceptanceInBothProjections ()
     {
         JsonContractGenerationResult result =
             GenerationTestHarness.Generate<NullableRootContract>(
@@ -321,9 +285,24 @@ public sealed class SystemTextJsonContractTests
     [Trait("Size", "Small")]
     public void Generate_ExplicitIntegerRangeNarrowsSerializerBounds ()
     {
+        var metadata = new JsonContractMetadataRegistry()
+            .RegisterProvider(
+                new TestMetadataProvider<byte>(
+                    "tests.narrow-byte",
+                    static (context, builder) =>
+                    {
+                        if (context.PropertyInfo?.Name == "Value")
+                        {
+                            builder.SetMinimum(
+                                JsonContractNumber.FromInt64(1));
+                            builder.SetMaximum(
+                                JsonContractNumber.FromInt64(254));
+                        }
+                    }));
         JsonContractGenerationResult result =
             GenerationTestHarness.Generate<NarrowIntegerContract>(
-                "tests.narrow-integer-bounds");
+                "tests.narrow-integer-bounds",
+                metadataRegistry: metadata);
 
         JsonContractConstraints constraints = GenerationTestHarness
             .GetProperty(result.Model.Root, "Value")
@@ -337,50 +316,48 @@ public sealed class SystemTextJsonContractTests
     [Trait("Size", "Small")]
     public void Generate_ExplicitIntegerRangeCannotExtendSerializerBounds ()
     {
+        var metadata = new JsonContractMetadataRegistry()
+            .RegisterProvider(
+                new TestMetadataProvider<byte>(
+                    "tests.widened-byte",
+                    static (context, builder) =>
+                    {
+                        if (context.PropertyInfo?.Name == "Value")
+                        {
+                            builder.SetMinimum(
+                                JsonContractNumber.FromInt64(-1));
+                            builder.SetMaximum(
+                                JsonContractNumber.FromInt64(255));
+                        }
+                    }));
         JsonContractGenerationException exception =
             Assert.Throws<JsonContractGenerationException>(
                 () => GenerationTestHarness.Generate<
                     WidenedIntegerContract>(
-                        "tests.widened-integer-bounds"));
+                        "tests.widened-integer-bounds",
+                        metadataRegistry: metadata));
 
         Assert.Equal(
             JsonContractGenerationFailureKind.InvalidMetadataValue,
             exception.FailureKind);
         Assert.Equal(typeof(byte), exception.TargetType);
         Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Minimum, exception.MetadataKind);
     }
 
     private sealed class SerializerContract
     {
-        [AllowNull]
         public string? OptionalDisplayName { get; set; }
 
         [JsonRequired]
         public string ServerName { get; set; } = string.Empty;
 
-        [JsonRequired]
-        [Required]
         [JsonPropertyName("wire_id")]
-        public int WireIdentifier { get; set; }
+        public required int WireIdentifier { get; set; }
 
         [JsonIgnore]
         public string IgnoredValue { get; set; } = string.Empty;
     }
 
-    private sealed class RequiredMetadataConflictContract
-    {
-        [Required]
-        public int Value { get; set; }
-    }
-
-    private sealed class NullMetadataConflictContract
-    {
-        [AllowNull]
-        public string Value { get; set; } = string.Empty;
-    }
-
-    [AllowNull]
     private sealed class NullableRootContract
     {
         public int Value { get; set; }
@@ -452,13 +429,11 @@ public sealed class SystemTextJsonContractTests
 
     private sealed class NarrowIntegerContract
     {
-        [Range("1", "254")]
         public byte Value { get; set; }
     }
 
     private sealed class WidenedIntegerContract
     {
-        [Range("-1", "255")]
         public byte Value { get; set; }
     }
 }

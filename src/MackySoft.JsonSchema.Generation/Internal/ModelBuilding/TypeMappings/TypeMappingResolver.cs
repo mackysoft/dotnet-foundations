@@ -1,6 +1,3 @@
-using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
@@ -13,36 +10,29 @@ namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding.TypeMappings;
 internal sealed class TypeMappingResolver
 {
     private readonly string contractId;
-    private readonly JsonSerializerOptions serializerOptions;
     private readonly IReadOnlyList<IJsonContractTypeMapper> typeMappers;
 
     internal TypeMappingResolver (
         string contractId,
-        JsonSerializerOptions serializerOptions,
         IReadOnlyList<IJsonContractTypeMapper> typeMappers)
     {
         this.contractId = contractId
             ?? throw new ArgumentNullException(nameof(contractId));
-        this.serializerOptions = serializerOptions
-            ?? throw new ArgumentNullException(nameof(serializerOptions));
         this.typeMappers = typeMappers
             ?? throw new ArgumentNullException(nameof(typeMappers));
     }
 
     internal ResolvedTypeMapping? Resolve (
-        Type targetType,
         JsonTypeInfo typeInfo,
-        MemberInfo? member,
-        string? jsonPropertyName,
-        JsonConverter? propertyConverter)
+        JsonTypeInfo declaringTypeInfo,
+        JsonPropertyInfo? propertyInfo,
+        string? diagnosticPropertyName)
     {
+        Type targetType = typeInfo.Type;
         var context = new JsonContractTypeMapperContext(
-            targetType,
             typeInfo,
-            serializerOptions,
-            member,
-            jsonPropertyName,
-            propertyConverter);
+            declaringTypeInfo,
+            propertyInfo);
         var matches = new List<IJsonContractTypeMapper>();
         foreach (IJsonContractTypeMapper mapper in typeMappers)
         {
@@ -58,7 +48,7 @@ internal sealed class TypeMappingResolver
                     $"Type mapper '{mapper.StableId}' failed while inspecting '{targetType.FullName}'.",
                     contractId,
                     targetType,
-                    jsonPropertyName,
+                    diagnosticPropertyName,
                     sourceIds: new[] { mapper.StableId },
                     innerException: exception);
             }
@@ -76,7 +66,7 @@ internal sealed class TypeMappingResolver
                 $"More than one type mapper recognizes '{targetType.FullName}'.",
                 contractId,
                 targetType,
-                jsonPropertyName,
+                diagnosticPropertyName,
                 sourceIds: matches.Select(static mapper => mapper.StableId));
         }
 
@@ -91,7 +81,7 @@ internal sealed class TypeMappingResolver
             JsonContractTypeMapping mapping = selected.Map(context)
                 ?? throw new InvalidOperationException(
                     "A matching type mapper returned null.");
-            return new ResolvedTypeMapping(selected, mapping);
+            return new ResolvedTypeMapping(selected, mapping, context);
         }
         catch (JsonContractGenerationException)
         {
@@ -104,7 +94,7 @@ internal sealed class TypeMappingResolver
                 $"Type mapper '{selected.StableId}' could not map '{targetType.FullName}'.",
                 contractId,
                 targetType,
-                jsonPropertyName,
+                diagnosticPropertyName,
                 sourceIds: new[] { selected.StableId },
                 innerException: exception);
         }

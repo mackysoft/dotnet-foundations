@@ -14,7 +14,7 @@ internal static class GenerationTestHarness
         string contractId,
         JsonSerializerOptions? serializerOptions = null,
         JsonSchemaDocumentOptions? documentOptions = null,
-        IEnumerable<IJsonContractMetadataProvider>? metadataProviders = null,
+        JsonContractMetadataRegistry? metadataRegistry = null,
         IEnumerable<IJsonContractTypeMapper>? typeMappers = null,
         IEnumerable<IJsonContractModelContributor>? modelContributors = null,
         IEnumerable<IJsonSchemaDocumentPostProcessor>? documentPostProcessors = null,
@@ -24,8 +24,11 @@ internal static class GenerationTestHarness
         {
             UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         };
-        IJsonTypeInfoResolver resolver =
-            serializerOptions.TypeInfoResolver ?? new DefaultJsonTypeInfoResolver();
+        serializerOptions.TypeInfoResolver ??=
+            new DefaultJsonTypeInfoResolver();
+        serializerOptions.MakeReadOnly();
+        JsonTypeInfo typeInfo =
+            serializerOptions.GetTypeInfo(typeof(TContract));
         documentOptions ??= new JsonSchemaDocumentOptions(
             JsonSchemaDocumentKind.Complete,
             id: null,
@@ -35,15 +38,13 @@ internal static class GenerationTestHarness
         var generator = new JsonContractGenerator(
             new JsonContractGeneratorOptions(
                 settings,
-                metadataProviders,
+                metadataRegistry,
                 typeMappers,
                 modelContributors,
                 documentPostProcessors));
         var request = new JsonContractGenerationRequest(
             contractId,
-            typeof(TContract),
-            serializerOptions,
-            resolver,
+            typeInfo,
             documentOptions);
 
         return generator.Generate(request);

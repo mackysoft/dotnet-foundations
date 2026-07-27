@@ -10,7 +10,7 @@ public sealed class JsonContractGeneratorOptions
 {
     /// <summary> Initializes generator options and validates extension identities. </summary>
     /// <param name="settings"> JSON-value semantics shared by every generated contract. </param>
-    /// <param name="metadataProviders"> Optional metadata providers. </param>
+    /// <param name="metadataRegistry"> Optional typed metadata registrations. </param>
     /// <param name="typeMappers"> Optional converter and value-object mappings. </param>
     /// <param name="modelContributors"> Optional product metadata contributors. </param>
     /// <param name="documentPostProcessors"> Optional delivery-only schema annotation providers. </param>
@@ -20,16 +20,16 @@ public sealed class JsonContractGeneratorOptions
     /// </exception>
     public JsonContractGeneratorOptions (
         JsonContractGenerationSettings settings,
-        IEnumerable<IJsonContractMetadataProvider>? metadataProviders = null,
+        JsonContractMetadataRegistry? metadataRegistry = null,
         IEnumerable<IJsonContractTypeMapper>? typeMappers = null,
         IEnumerable<IJsonContractModelContributor>? modelContributors = null,
         IEnumerable<IJsonSchemaDocumentPostProcessor>? documentPostProcessors = null)
     {
         Settings = settings ?? throw new ArgumentNullException(nameof(settings));
-        MetadataProviders = NormalizeExtensions(
-            metadataProviders,
-            nameof(metadataProviders),
-            "metadataProvider");
+        MetadataExtensions = NormalizeExtensions(
+            metadataRegistry?.CreateSnapshot(),
+            nameof(metadataRegistry),
+            "metadataExtension");
         TypeMappers = NormalizeExtensions(
             typeMappers,
             nameof(typeMappers),
@@ -47,8 +47,7 @@ public sealed class JsonContractGeneratorOptions
     /// <summary> Gets JSON-value generation semantics. </summary>
     public JsonContractGenerationSettings Settings { get; }
 
-    /// <summary> Gets metadata providers ordered by stable ID. </summary>
-    public IReadOnlyList<IJsonContractMetadataProvider> MetadataProviders { get; }
+    internal IReadOnlyList<MetadataExtensionRegistration> MetadataExtensions { get; }
 
     /// <summary> Gets type mappers ordered by stable ID. </summary>
     public IReadOnlyList<IJsonContractTypeMapper> TypeMappers { get; }

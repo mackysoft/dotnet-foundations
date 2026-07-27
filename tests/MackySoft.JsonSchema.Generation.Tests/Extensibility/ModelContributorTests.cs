@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
@@ -49,11 +48,9 @@ public sealed class ModelContributorTests
             {
                 JsonContractProperty nestedProperty = context.Root.Properties.Single(
                     static property => property.Name == nameof(TargetNavigationContract.Nested));
-                int propertyIndex = context.Root.Properties
-                    .Select(static (property, index) => (property, index))
-                    .Single(candidate => ReferenceEquals(candidate.property, nestedProperty))
-                    .index;
-                JsonContractVariant variant = context.Root.Variants[0];
+                JsonContractProperty shapeProperty = context.Root.Properties.Single(
+                    static property => property.Name == nameof(TargetNavigationContract.Shape));
+                JsonContractVariant variant = shapeProperty.Value.Variants[0];
                 JsonContractDefinition definition = context.Definitions[0];
 
                 rootNodeTarget = context.GetTarget(context.Root);
@@ -103,7 +100,15 @@ public sealed class ModelContributorTests
         Assert.Equal(
             $"/root/properties/{nestedIndex}",
             observed["property"].Pointer);
-        Assert.Equal("/root/variants/0", observed["variant"].Pointer);
+        JsonContractProperty shape = result.Model.Root.Properties.Single(
+            static property => property.Name == nameof(TargetNavigationContract.Shape));
+        int shapeIndex = result.Model.Root.Properties
+            .Select(static (property, index) => (property, index))
+            .Single(candidate => ReferenceEquals(candidate.property, shape))
+            .index;
+        Assert.Equal(
+            $"/root/properties/{shapeIndex}/value/variants/0",
+            observed["variant"].Pointer);
         Assert.Equal("/definitions/0", observed["definition"].Pointer);
         Assert.Equal(6, result.Model.Contributions.Count);
     }
@@ -172,23 +177,22 @@ public sealed class ModelContributorTests
         public int Value { get; set; }
     }
 
-    [Discriminator(nameof(Kind))]
-    [OneOfBranch(
-        "count",
-        nameof(Count),
-        DiscriminatorValueJson = "\"count\"")]
-    [OneOfBranch(
-        "nested",
-        nameof(Nested),
-        DiscriminatorValueJson = "\"nested\"")]
     private sealed class TargetNavigationContract
     {
-        [JsonRequired]
-        public string Kind { get; set; } = string.Empty;
-
-        public int? Count { get; set; }
+        public ShapeContract Shape { get; set; } = new CircleContract();
 
         public NestedTargetContract? Nested { get; set; }
+    }
+
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "kind")]
+    [JsonDerivedType(typeof(CircleContract), "circle")]
+    private abstract class ShapeContract
+    {
+    }
+
+    private sealed class CircleContract : ShapeContract
+    {
+        public int Radius { get; set; }
     }
 
     private sealed class NestedTargetContract

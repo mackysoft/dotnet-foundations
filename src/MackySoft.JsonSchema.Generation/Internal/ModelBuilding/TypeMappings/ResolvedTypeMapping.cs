@@ -9,15 +9,20 @@ internal sealed class ResolvedTypeMapping
 {
     internal ResolvedTypeMapping (
         IJsonContractTypeMapper mapper,
-        JsonContractTypeMapping mapping)
+        JsonContractTypeMapping mapping,
+        JsonContractTypeMapperContext context)
     {
         Mapper = mapper
             ?? throw new ArgumentNullException(nameof(mapper));
         Mapping = mapping
             ?? throw new ArgumentNullException(nameof(mapping));
+        Context = context
+            ?? throw new ArgumentNullException(nameof(context));
     }
 
     internal IJsonContractTypeMapper Mapper { get; }
 
     internal JsonContractTypeMapping Mapping { get; }
+
+    internal JsonContractTypeMapperContext Context { get; }
 }

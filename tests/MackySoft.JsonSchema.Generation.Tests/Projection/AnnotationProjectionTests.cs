@@ -2,6 +2,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
+using MackySoft.JsonSchema.Generation.Extensibility;
+using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Projection;
@@ -10,8 +12,60 @@ public sealed class AnnotationProjectionTests
 {
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_NormalizesAnnotationsAndConstraintsIntoBothProjections ()
+    public void Generate_NormalizesTypedAnnotationsAndConstraintsIntoBothProjections ()
     {
+        var metadata = new JsonContractMetadataRegistry()
+            .RegisterProvider(
+                new TestMetadataProvider<AnnotatedContract>(
+                    "tests.annotated-root",
+                    static (context, builder) =>
+                    {
+                        if (context.PropertyInfo is null)
+                        {
+                            builder.AddExample(
+                                new AnnotatedContract
+                                {
+                                    Mode = "fast",
+                                    Revision = 3,
+                                    Items = new[] { 1 },
+                                });
+                        }
+                    }))
+            .RegisterProvider(
+                new TestMetadataProvider<string>(
+                    "tests.annotated-string",
+                    static (context, builder) =>
+                    {
+                        if (context.PropertyInfo?.Name == "mode")
+                        {
+                            builder.AddExample("fast");
+                        }
+                    }))
+            .RegisterProvider(
+                new TestMetadataProvider<int>(
+                    "tests.annotated-integer",
+                    static (context, builder) =>
+                    {
+                        if (context.PropertyInfo?.Name == "revision")
+                        {
+                            builder.SetConst(3);
+                            builder.SetExclusiveMinimum(
+                                JsonContractNumber.FromInt64(0));
+                            builder.SetMaximum(
+                                JsonContractNumber.FromInt64(10));
+                        }
+                    }))
+            .RegisterProvider(
+                new TestMetadataProvider<int[]>(
+                    "tests.annotated-array",
+                    static (context, builder) =>
+                    {
+                        if (context.PropertyInfo?.Name == "items")
+                        {
+                            builder.AddExample(new[] { 1, 2 });
+                        }
+                    }));
+
         JsonContractGenerationResult result =
             GenerationTestHarness.Generate<AnnotatedContract>(
                 "tests.annotated-contract",
@@ -20,7 +74,8 @@ public sealed class AnnotationProjectionTests
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                     UnmappedMemberHandling =
                         JsonUnmappedMemberHandling.Disallow,
-                });
+                },
+                metadataRegistry: metadata);
 
         JsonContractNode root = result.Model.Root;
         Assert.Equal("Annotated contract", root.Annotations.Title);
@@ -34,12 +89,9 @@ public sealed class AnnotationProjectionTests
         JsonContractNode mode = GenerationTestHarness
             .GetProperty(root, "mode")
             .Value;
-        Assert.Equal(JsonContractNodeKind.Enum, mode.Kind);
+        Assert.Equal(JsonContractNodeKind.Scalar, mode.Kind);
         Assert.Equal("Execution mode.", mode.Annotations.Description);
         Assert.Equal("fast", mode.Annotations.Examples[0].GetString());
-        Assert.Equal(
-            new[] { "fast", "safe" },
-            mode.AllowedValues.Select(static value => value.GetString()));
         Assert.Equal(2, mode.Constraints.MinimumLength);
         Assert.Equal(8, mode.Constraints.MaximumLength);
         Assert.Equal("^[a-z]+$", mode.Constraints.Pattern);
@@ -60,6 +112,9 @@ public sealed class AnnotationProjectionTests
             .Value;
         Assert.Equal(1, items.Constraints.MinimumItems);
         Assert.Equal(3, items.Constraints.MaximumItems);
+        Assert.Equal(
+            2,
+            items.Annotations.Examples[0].GetArrayLength());
 
         using JsonDocument schema = JsonDocument.Parse(result.GetJsonSchemaUtf8());
         JsonElement schemaRoot = schema.RootElement;
@@ -73,12 +128,7 @@ public sealed class AnnotationProjectionTests
         JsonElement schemaProperties = schemaRoot.GetProperty("properties");
         JsonElement modeSchema = schemaProperties.GetProperty("mode");
         Assert.Equal("Execution mode.", modeSchema.GetProperty("description").GetString());
-        Assert.Equal(
-            new[] { "fast", "safe" },
-            modeSchema
-                .GetProperty("enum")
-                .EnumerateArray()
-                .Select(static value => value.GetString()));
+        Assert.Equal("fast", modeSchema.GetProperty("examples")[0].GetString());
         Assert.Equal(2, modeSchema.GetProperty("minLength").GetInt32());
         Assert.Equal(8, modeSchema.GetProperty("maxLength").GetInt32());
         Assert.Equal("^[a-z]+$", modeSchema.GetProperty("pattern").GetString());
@@ -91,10 +141,6 @@ public sealed class AnnotationProjectionTests
         Assert.Equal(0, revisionSchema.GetProperty("exclusiveMinimum").GetInt32());
         Assert.Equal(10, revisionSchema.GetProperty("maximum").GetInt32());
 
-        JsonElement itemsSchema = schemaProperties.GetProperty("items");
-        Assert.Equal(1, itemsSchema.GetProperty("minItems").GetInt32());
-        Assert.Equal(3, itemsSchema.GetProperty("maxItems").GetInt32());
-
         using JsonDocument typeMetadata = JsonDocument.Parse(
             result.GetTypeMetadataUtf8());
         JsonElement metadataRoot = typeMetadata.RootElement.GetProperty("root");
@@ -102,9 +148,7 @@ public sealed class AnnotationProjectionTests
             metadataRoot,
             "mode");
         JsonElement modeValue = modeMetadata.GetProperty("value");
-        Assert.Equal(
-            "enum",
-            modeValue.GetProperty("kind").GetString());
+        Assert.Equal("scalar", modeValue.GetProperty("kind").GetString());
         Assert.Equal(
             "Execution mode.",
             modeValue
@@ -121,22 +165,14 @@ public sealed class AnnotationProjectionTests
 
     [Title("Annotated contract")]
     [Description("Exercises shared annotations.")]
-    [Example("""{"mode":"fast","revision":3,"items":[1]}""")]
     [PropertyCount(1, 3)]
     private sealed class AnnotatedContract
     {
         [Description("Execution mode.")]
-        [Example("\"fast\"")]
-        [Enum("\"fast\"", "\"safe\"")]
         [Length(2, 8)]
         [Pattern("^[a-z]+$")]
         public string Mode { get; set; } = string.Empty;
 
-        [Const("3")]
-        [Range(
-            "0",
-            "10",
-            ExclusiveMinimum = true)]
         public int Revision { get; set; }
 
         [ItemCount(1, 3)]

@@ -1,5 +1,4 @@
 using MackySoft.JsonSchema.Generation.Internal.Common;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Diagnostics;
 
@@ -12,7 +11,6 @@ public sealed class JsonContractGenerationException : Exception
         string? contractId = null,
         Type? targetType = null,
         string? jsonPropertyName = null,
-        JsonContractMetadataKind? metadataKind = null,
         IEnumerable<string>? sourceIds = null,
         Exception? innerException = null)
         : base(message, innerException)
@@ -21,7 +19,6 @@ public sealed class JsonContractGenerationException : Exception
         ContractId = contractId;
         TargetType = targetType;
         JsonPropertyName = jsonPropertyName;
-        MetadataKind = metadataKind;
         SourceIds = sourceIds is null
             ? Array.AsReadOnly(Array.Empty<string>())
             : JsonContractCollections.Copy(sourceIds, nameof(sourceIds));
@@ -38,9 +35,6 @@ public sealed class JsonContractGenerationException : Exception
 
     /// <summary> Gets the exact serialized JSON property name associated with the failure. </summary>
     public string? JsonPropertyName { get; }
-
-    /// <summary> Gets the metadata category associated with the failure. </summary>
-    public JsonContractMetadataKind? MetadataKind { get; }
 
     /// <summary> Gets stable extension or built-in source identifiers relevant to the failure. </summary>
     public IReadOnlyList<string> SourceIds { get; }

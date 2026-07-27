@@ -1,5 +1,5 @@
 using System.Text.Json;
-using MackySoft.JsonSchema.Generation.Internal.Common;
+using MackySoft.JsonSchema.Generation.Internal.Determinism;
 
 namespace MackySoft.JsonSchema.Generation.ContractModel;
 
@@ -8,32 +8,20 @@ public sealed class JsonContractVariant
 {
     internal JsonContractVariant (
         string name,
-        JsonContractNode? value,
-        IEnumerable<string> requiredProperties,
-        JsonElement? discriminatorValue,
-        JsonContractAnnotations annotations)
+        JsonContractNode value,
+        JsonElement discriminatorValue)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
-        Value = value;
-        RequiredProperties = JsonContractCollections.Copy(
-            requiredProperties,
-            nameof(requiredProperties));
-        DiscriminatorValue = JsonContractCollections.CloneNullableJsonElement(discriminatorValue);
-        Annotations = annotations ?? throw new ArgumentNullException(nameof(annotations));
+        Value = value ?? throw new ArgumentNullException(nameof(value));
+        DiscriminatorValue = JsonElementUtility.Clone(discriminatorValue);
     }
 
     /// <summary> Gets the stable branch name used by contract metadata consumers. </summary>
     public string Name { get; }
 
-    /// <summary> Gets the branch value contract, or <see langword="null" /> for a property-requirement branch. </summary>
-    public JsonContractNode? Value { get; }
-
-    /// <summary> Gets the JSON properties whose presence selects this branch. </summary>
-    public IReadOnlyList<string> RequiredProperties { get; }
+    /// <summary> Gets the branch value contract. </summary>
+    public JsonContractNode Value { get; }
 
     /// <summary> Gets the discriminator constant associated with this branch. </summary>
-    public JsonElement? DiscriminatorValue { get; }
-
-    /// <summary> Gets descriptive metadata for this branch. </summary>
-    public JsonContractAnnotations Annotations { get; }
+    public JsonElement DiscriminatorValue { get; }
 }

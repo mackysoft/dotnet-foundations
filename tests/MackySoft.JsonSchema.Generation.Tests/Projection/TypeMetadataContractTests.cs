@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
@@ -158,32 +157,20 @@ public sealed class TypeMetadataContractTests
                 {
                     "name",
                     "value",
-                    "requiredProperties",
                     "discriminatorValue",
-                    "annotations",
                 },
                 PropertyNames(variants[index]));
             Assert.Equal(
                 model.Variants[index].Name,
                 variants[index].GetProperty("name").GetString());
             Assert.Equal(
-                model.Variants[index].RequiredProperties,
+                model.Variants[index].DiscriminatorValue.GetRawText(),
                 variants[index]
-                    .GetProperty("requiredProperties")
-                    .EnumerateArray()
-                    .Select(static property => property.GetString()));
-            if (model.Variants[index].Value is null)
-            {
-                Assert.Equal(
-                    JsonValueKind.Null,
-                    variants[index].GetProperty("value").ValueKind);
-            }
-            else
-            {
-                AssertNode(
-                    model.Variants[index].Value!,
-                    variants[index].GetProperty("value"));
-            }
+                    .GetProperty("discriminatorValue")
+                    .GetRawText());
+            AssertNode(
+                model.Variants[index].Value,
+                variants[index].GetProperty("value"));
         }
 
         AssertOptionalNode(model.Items, metadata.GetProperty("items"));
@@ -226,22 +213,20 @@ public sealed class TypeMetadataContractTests
             .ToArray();
     }
 
-    [Discriminator(nameof(Kind))]
-    [OneOfBranch(
-        "count",
-        nameof(Count),
-        DiscriminatorValueJson = "\"count\"")]
-    [OneOfBranch(
-        "nested",
-        nameof(Nested),
-        DiscriminatorValueJson = "\"nested\"")]
-    private sealed class TypeMetadataContract
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$kind")]
+    [JsonDerivedType(typeof(CountTypeMetadataContract), "count")]
+    [JsonDerivedType(typeof(NestedTypeMetadataContract), "nested")]
+    private abstract class TypeMetadataContract
     {
-        [JsonRequired]
-        public string Kind { get; set; } = string.Empty;
+    }
 
-        public int? Count { get; set; }
+    private sealed class CountTypeMetadataContract : TypeMetadataContract
+    {
+        public int Count { get; set; }
+    }
 
+    private sealed class NestedTypeMetadataContract : TypeMetadataContract
+    {
         public NestedContract? Nested { get; set; }
     }
 

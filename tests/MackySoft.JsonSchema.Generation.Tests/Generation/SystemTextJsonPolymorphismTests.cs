@@ -2,8 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using MackySoft.JsonSchema.Generation.ContractModel;
-using MackySoft.JsonSchema.Generation.Diagnostics;
-using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Generation;
@@ -29,8 +27,7 @@ public sealed class SystemTextJsonPolymorphismTests
 
         foreach (JsonContractVariant variant in result.Model.Root.Variants)
         {
-            JsonContractNode reference = Assert.IsType<JsonContractNode>(
-                variant.Value);
+            JsonContractNode reference = variant.Value;
             string definitionId = Assert.IsType<string>(reference.ReferenceId);
             JsonContractDefinition definition = Assert.Single(
                 result.Model.Definitions,
@@ -44,7 +41,7 @@ public sealed class SystemTextJsonPolymorphismTests
             Assert.True(discriminator.IsRequired);
             Assert.Equal(JsonContractNodeKind.Const, discriminator.Value.Kind);
             Assert.Equal(
-                variant.DiscriminatorValue?.GetString(),
+                variant.DiscriminatorValue.GetString(),
                 discriminator.Value.Constant?.GetString());
 
             JsonElement definitionSchema = definitions.GetProperty(definitionId);
@@ -61,7 +58,7 @@ public sealed class SystemTextJsonPolymorphismTests
                     "$kind",
                     StringComparison.Ordinal));
             Assert.Equal(
-                variant.DiscriminatorValue?.GetString(),
+                variant.DiscriminatorValue.GetString(),
                 definitionSchema
                     .GetProperty("properties")
                     .GetProperty("$kind")
@@ -89,7 +86,7 @@ public sealed class SystemTextJsonPolymorphismTests
             result.Model.Root.Variants
                 .Select(
                     static variant =>
-                        variant.DiscriminatorValue?.GetString())
+                        variant.DiscriminatorValue.GetString())
                 .ToArray());
     }
 
@@ -176,7 +173,7 @@ public sealed class SystemTextJsonPolymorphismTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenDerivedTypeIsTheBaseType_ReportsInvalidDiscriminatorRegistration ()
+    public void ResolveTypeInfo_WhenDerivedTypeIsTheBaseType_RejectsTheInvalidRegistration ()
     {
         AssertGenerationRejects(
             "tests.polymorphic-base-as-derived",
@@ -189,7 +186,7 @@ public sealed class SystemTextJsonPolymorphismTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenDerivedTypeIsAbstract_ReportsInvalidDiscriminatorRegistration ()
+    public void ResolveTypeInfo_WhenDerivedTypeIsAbstract_RejectsTheInvalidRegistration ()
     {
         AssertGenerationRejects(
             "tests.polymorphic-abstract-derived",
@@ -202,7 +199,7 @@ public sealed class SystemTextJsonPolymorphismTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenDerivedTypeIsAnInterface_ReportsInvalidDiscriminatorRegistration ()
+    public void ResolveTypeInfo_WhenDerivedTypeIsAnInterface_RejectsTheInvalidRegistration ()
     {
         AssertGenerationRejects<IConfiguredBase>(
             "tests.polymorphic-interface-derived",
@@ -215,7 +212,7 @@ public sealed class SystemTextJsonPolymorphismTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenDerivedTypeIsOpenGeneric_ReportsInvalidDiscriminatorRegistration ()
+    public void ResolveTypeInfo_WhenDerivedTypeIsOpenGeneric_RejectsTheInvalidRegistration ()
     {
         AssertGenerationRejects(
             "tests.polymorphic-open-generic-derived",
@@ -262,25 +259,12 @@ public sealed class SystemTextJsonPolymorphismTests
         Action<JsonPolymorphismOptions> configure,
         string discriminatorPropertyName = "$kind")
     {
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => GenerationTestHarness.Generate<TContract>(
-                    contractId,
-                    CreateSerializerOptions<TContract>(
-                        configure,
-                        discriminatorPropertyName)));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.UnsupportedTypeInfo,
-            exception.FailureKind);
-        Assert.Equal(contractId, exception.ContractId);
-        Assert.Equal(typeof(TContract), exception.TargetType);
-        Assert.Equal(
-            discriminatorPropertyName,
-            exception.JsonPropertyName);
-        Assert.Equal(
-            JsonContractMetadataKind.Discriminator,
-            exception.MetadataKind);
+        Assert.Throws<InvalidOperationException>(
+            () => GenerationTestHarness.Generate<TContract>(
+                contractId,
+                CreateSerializerOptions<TContract>(
+                    configure,
+                    discriminatorPropertyName)));
     }
 
     private static JsonSerializerOptions CreateSerializerOptions<TContract> (

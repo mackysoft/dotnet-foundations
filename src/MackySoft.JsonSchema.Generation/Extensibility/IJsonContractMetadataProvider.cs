@@ -1,11 +1,20 @@
 using MackySoft.JsonSchema.Generation.Metadata;
+
 namespace MackySoft.JsonSchema.Generation.Extensibility;
 
-/// <summary> Supplies explicit metadata for one CLR type or serialized member before model construction. </summary>
-public interface IJsonContractMetadataProvider : IJsonContractExtension
+/// <summary>
+/// Contributes typed annotations and constraints for serializer contracts of
+/// one CLR value type.
+/// </summary>
+/// <typeparam name="TValue"> The CLR value type handled by the provider. </typeparam>
+public interface IJsonContractMetadataProvider<TValue> : IJsonContractExtension
 {
-    /// <summary> Gets the complete finite metadata declaration for the requested source. </summary>
-    /// <param name="context"> The source type and optional serialized member being inspected. </param>
-    /// <returns> A finite snapshot of declarations. An empty list adds no metadata. </returns>
-    IReadOnlyList<JsonContractMetadata> GetMetadata (JsonContractMetadataContext context);
+    /// <summary>
+    /// Adds the complete finite metadata snapshot for the requested target.
+    /// </summary>
+    /// <param name="context"> The effective serializer contract being inspected. </param>
+    /// <param name="builder"> The scoped typed declaration builder. </param>
+    void ProvideMetadata (
+        JsonContractMetadataContext<TValue> context,
+        JsonContractMetadataBuilder<TValue> builder);
 }

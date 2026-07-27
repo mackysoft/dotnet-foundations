@@ -1,134 +1,46 @@
 using System.Text.Json;
+using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Internal.Determinism;
 using MackySoft.JsonSchema.Generation.Internal.Metadata.Contracts;
-using MackySoft.JsonSchema.Generation.Metadata;
+using MackySoft.JsonSchema.Generation.Internal.Metadata.Declarations;
 
 namespace MackySoft.JsonSchema.Generation.Internal.Metadata.Validation;
 
 internal static class MetadataConstraintValidator
 {
-    private static readonly JsonContractMetadataKind[] StructuralMetadataKinds =
-    {
-        JsonContractMetadataKind.Const,
-        JsonContractMetadataKind.EnumValue,
-        JsonContractMetadataKind.Minimum,
-        JsonContractMetadataKind.ExclusiveMinimum,
-        JsonContractMetadataKind.Maximum,
-        JsonContractMetadataKind.ExclusiveMaximum,
-        JsonContractMetadataKind.MinimumLength,
-        JsonContractMetadataKind.MaximumLength,
-        JsonContractMetadataKind.MinimumItems,
-        JsonContractMetadataKind.MaximumItems,
-        JsonContractMetadataKind.MinimumProperties,
-        JsonContractMetadataKind.MaximumProperties,
-        JsonContractMetadataKind.Pattern,
-        JsonContractMetadataKind.Format,
-    };
-
-    internal static void ValidateValueConstraints (
+    internal static void Validate (
         MetadataResolutionTarget target,
-        IReadOnlyList<ResolvedContractMetadata.MetadataProvenance> metadata,
-        JsonElement? constant,
-        IReadOnlyList<JsonElement> allowedValues,
-        JsonElement? minimum,
-        JsonElement? exclusiveMinimum,
-        JsonElement? maximum,
-        JsonElement? exclusiveMaximum,
-        int? minimumLength,
-        int? maximumLength,
-        int? minimumItems,
-        int? maximumItems,
-        int? minimumProperties,
-        int? maximumProperties)
+        MetadataDeclarationSet declarations,
+        JsonContractConstraints constraints)
     {
         ValidateOrderedPair(
-            minimumLength,
-            maximumLength,
-            JsonContractMetadataKind.MinimumLength,
-            JsonContractMetadataKind.MaximumLength,
-            metadata,
+            constraints.MinimumLength,
+            constraints.MaximumLength,
+            declarations.LengthBoundSourceIds,
             target,
             "String length bounds");
         ValidateOrderedPair(
-            minimumItems,
-            maximumItems,
-            JsonContractMetadataKind.MinimumItems,
-            JsonContractMetadataKind.MaximumItems,
-            metadata,
+            constraints.MinimumItems,
+            constraints.MaximumItems,
+            declarations.ItemCountBoundSourceIds,
             target,
             "Array item-count bounds");
         ValidateOrderedPair(
-            minimumProperties,
-            maximumProperties,
-            JsonContractMetadataKind.MinimumProperties,
-            JsonContractMetadataKind.MaximumProperties,
-            metadata,
+            constraints.MinimumProperties,
+            constraints.MaximumProperties,
+            declarations.PropertyCountBoundSourceIds,
             target,
             "Object property-count bounds");
         ValidateNumericBounds(
-            minimum,
-            exclusiveMinimum,
-            maximum,
-            exclusiveMaximum,
-            metadata,
+            constraints,
+            declarations.NumericBoundSourceIds,
             target);
-        ValidateConstantAndAllowedValues(
-            constant,
-            allowedValues,
-            metadata,
-            target);
-    }
-
-    internal static void ValidateArbitraryContract (
-        bool isArbitrary,
-        IReadOnlyList<ResolvedContractMetadata.MetadataProvenance> metadata,
-        IReadOnlyList<ResolvedContractMetadata.OneOfBranchProvenance> oneOfBranches,
-        IReadOnlyList<ResolvedContractMetadata.DiscriminatorProvenance> discriminators,
-        MetadataResolutionTarget target)
-    {
-        if (!isArbitrary)
-        {
-            return;
-        }
-
-        ResolvedContractMetadata.MetadataProvenance[] structuralMetadata =
-            metadata
-                .Where(
-                    declaration => StructuralMetadataKinds.Contains(
-                        declaration.Metadata.Kind))
-                .ToArray();
-        if (structuralMetadata.Length == 0
-            && oneOfBranches.Count == 0
-            && discriminators.Count == 0)
-        {
-            return;
-        }
-
-        IEnumerable<string> sources = MetadataValueResolver.SourceIds(
-                metadata,
-                JsonContractMetadataKind.Arbitrary)
-            .Concat(
-                structuralMetadata.Select(
-                    static declaration => declaration.SourceId))
-            .Concat(
-                oneOfBranches.Select(
-                    static declaration => declaration.SourceId))
-            .Concat(
-                discriminators.Select(
-                    static declaration => declaration.SourceId));
-        throw MetadataFailure.Invalid(
-            target,
-            JsonContractMetadataKind.Arbitrary,
-            sources,
-            "Arbitrary JSON metadata cannot coexist with structural value metadata.");
     }
 
     private static void ValidateOrderedPair (
         int? minimum,
         int? maximum,
-        JsonContractMetadataKind minimumKind,
-        JsonContractMetadataKind maximumKind,
-        IReadOnlyList<ResolvedContractMetadata.MetadataProvenance> declarations,
+        IEnumerable<string> sourceIds,
         MetadataResolutionTarget target,
         string pairName)
     {
@@ -138,25 +50,22 @@ internal static class MetadataConstraintValidator
         {
             throw MetadataFailure.Invalid(
                 target,
-                metadataKind: null,
-                MetadataValueResolver.SourceIds(
-                    declarations,
-                    minimumKind,
-                    maximumKind),
+                sourceIds,
                 $"{pairName} must be ordered from minimum to maximum.");
         }
     }
 
     private static void ValidateNumericBounds (
-        JsonElement? minimum,
-        JsonElement? exclusiveMinimum,
-        JsonElement? maximum,
-        JsonElement? exclusiveMaximum,
-        IReadOnlyList<ResolvedContractMetadata.MetadataProvenance> declarations,
+        JsonContractConstraints constraints,
+        IEnumerable<string> sourceIds,
         MetadataResolutionTarget target)
     {
-        NumericBound? lower = StrongestLowerBound(minimum, exclusiveMinimum);
-        NumericBound? upper = StrongestUpperBound(maximum, exclusiveMaximum);
+        NumericBound? lower = StrongestLowerBound(
+            constraints.Minimum,
+            constraints.ExclusiveMinimum);
+        NumericBound? upper = StrongestUpperBound(
+            constraints.Maximum,
+            constraints.ExclusiveMaximum);
         if (!lower.HasValue || !upper.HasValue)
         {
             return;
@@ -171,13 +80,7 @@ internal static class MetadataConstraintValidator
         {
             throw MetadataFailure.Invalid(
                 target,
-                metadataKind: null,
-                MetadataValueResolver.SourceIds(
-                    declarations,
-                    JsonContractMetadataKind.Minimum,
-                    JsonContractMetadataKind.ExclusiveMinimum,
-                    JsonContractMetadataKind.Maximum,
-                    JsonContractMetadataKind.ExclusiveMaximum),
+                sourceIds,
                 "Numeric bounds do not describe an ordered, non-empty interval.");
         }
     }
@@ -226,31 +129,6 @@ internal static class MetadataConstraintValidator
                 exclusive.Value) < 0
             ? new NumericBound(inclusive.Value, isExclusive: false)
             : new NumericBound(exclusive.Value, isExclusive: true);
-    }
-
-    private static void ValidateConstantAndAllowedValues (
-        JsonElement? constant,
-        IReadOnlyList<JsonElement> allowedValues,
-        IReadOnlyList<ResolvedContractMetadata.MetadataProvenance> declarations,
-        MetadataResolutionTarget target)
-    {
-        if (constant.HasValue
-            && allowedValues.Count != 0
-            && !allowedValues.Any(
-                value => JsonElementUtility.CompareCanonical(
-                    constant.Value,
-                    value) == 0))
-        {
-            throw MetadataFailure.Invalid(
-                target,
-                JsonContractMetadataKind.Const,
-                MetadataValueResolver.SourceIds(
-                    declarations,
-                    JsonContractMetadataKind.Const,
-                    JsonContractMetadataKind.EnumValue),
-                "The declared constant is not contained in the finite allowed-value set.");
-        }
-
     }
 
     private readonly struct NumericBound

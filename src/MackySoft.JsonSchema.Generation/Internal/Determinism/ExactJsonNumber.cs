@@ -9,6 +9,12 @@ namespace MackySoft.JsonSchema.Generation.Internal.Determinism;
 /// </summary>
 internal readonly struct ExactJsonNumber
 {
+    private const int MaximumExpandedIntegerZeros = 32;
+
+    private const int MaximumEmbeddedFractionDigits = 32;
+
+    private const int MaximumLeadingFractionZeros = 6;
+
     private ExactJsonNumber (
         bool isNegative,
         string digits,
@@ -90,6 +96,96 @@ internal readonly struct ExactJsonNumber
             Digits,
             "e",
             Exponent.ToString(CultureInfo.InvariantCulture));
+    }
+
+    internal string ToJsonText ()
+    {
+        if (IsZero)
+        {
+            return "0";
+        }
+
+        if (CanUseExpandedInteger())
+        {
+            return FormatExpandedInteger();
+        }
+
+        BigInteger decimalPoint = Digits.Length + Exponent;
+        if (CanEmbedDecimalPoint(decimalPoint))
+        {
+            return FormatWithEmbeddedDecimalPoint(decimalPoint);
+        }
+
+        if (CanUseLeadingFraction(decimalPoint))
+        {
+            return FormatLeadingFraction(decimalPoint);
+        }
+
+        return FormatScientific();
+    }
+
+    private bool CanUseExpandedInteger ()
+    {
+        return Exponent >= BigInteger.Zero
+            && Exponent <= MaximumExpandedIntegerZeros;
+    }
+
+    private bool CanEmbedDecimalPoint (BigInteger decimalPoint)
+    {
+        return Exponent < BigInteger.Zero
+            && Exponent >= -MaximumEmbeddedFractionDigits
+            && decimalPoint > BigInteger.Zero;
+    }
+
+    private static bool CanUseLeadingFraction (
+        BigInteger decimalPoint)
+    {
+        return decimalPoint <= BigInteger.Zero
+            && decimalPoint >= -MaximumLeadingFractionZeros;
+    }
+
+    private string FormatExpandedInteger ()
+    {
+        return Sign()
+            + Digits
+            + new string('0', (int)Exponent);
+    }
+
+    private string FormatWithEmbeddedDecimalPoint (
+        BigInteger decimalPoint)
+    {
+        int point = (int)decimalPoint;
+        return Sign()
+            + Digits.Substring(0, point)
+            + "."
+            + Digits.Substring(point);
+    }
+
+    private string FormatLeadingFraction (BigInteger decimalPoint)
+    {
+        return Sign()
+            + "0."
+            + new string('0', (int)-decimalPoint)
+            + Digits;
+    }
+
+    private string FormatScientific ()
+    {
+        BigInteger scientificExponent = Exponent + Digits.Length - 1;
+        string significand = Digits.Length == 1
+            ? Digits
+            : Digits.Substring(0, 1)
+                + "."
+                + Digits.Substring(1);
+        return Sign()
+            + significand
+            + "e"
+            + scientificExponent.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private string Sign ()
+    {
+        return IsNegative ? "-" : string.Empty;
     }
 
     private static int FindExponentMarker (

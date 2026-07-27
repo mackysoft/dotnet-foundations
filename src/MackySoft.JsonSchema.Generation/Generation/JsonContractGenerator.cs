@@ -63,7 +63,7 @@ public sealed class JsonContractGenerator
 
         foreach (JsonContractGenerationRequest request in orderedRequests)
         {
-            ValidateContractId(request.ContractId, request.ContractType);
+            ValidateContractId(request.ContractId, request.TypeInfo.Type);
         }
 
         Array.Sort(
@@ -83,7 +83,7 @@ public sealed class JsonContractGenerator
                     JsonContractGenerationFailureKind.DuplicateContractId,
                     $"Generation set contains contract ID '{request.ContractId}' more than once.",
                     request.ContractId,
-                    request.ContractType);
+                    request.TypeInfo.Type);
             }
         }
 
@@ -102,12 +102,12 @@ public sealed class JsonContractGenerator
     {
         ContractModelBuilder builder = new(
             request.ContractId,
-            request.CreateSerializerOptions(),
+            request.TypeInfo,
             options.Settings,
-            options.MetadataProviders,
+            options.MetadataExtensions,
             options.TypeMappers);
 
-        ContractModelStructure structure = builder.Build(request.ContractType);
+        ContractModelStructure structure = builder.Build();
         IReadOnlyList<JsonContractModelContribution> contributions =
             ModelContributionResolver.Resolve(
                 request.ContractId,
@@ -124,7 +124,7 @@ public sealed class JsonContractGenerator
         string digest = ContractDigestCalculator.Calculate(
             modelWithoutDigest,
             options.Settings,
-            options.MetadataProviders,
+            options.MetadataExtensions,
             options.TypeMappers,
             options.ModelContributors);
         JsonContractModel model = new(

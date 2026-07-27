@@ -1,8 +1,6 @@
 using System.Text.Json;
 using MackySoft.JsonSchema.Generation.ContractModel;
-using MackySoft.JsonSchema.Generation.Internal.Determinism;
 using MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Shapes;
-using MackySoft.JsonSchema.Generation.Metadata;
 
 namespace MackySoft.JsonSchema.Generation.Internal.ModelBuilding.Validation;
 
@@ -14,45 +12,6 @@ internal sealed class JsonContractValueValidator
 {
     private readonly List<PendingValidation> pendingValidations = new();
 
-    internal JsonElement[] NormalizeAllowedValues (
-        string contractId,
-        Type targetType,
-        string? jsonPropertyName,
-        IReadOnlyList<JsonElement> allowedValues,
-        ContractNodeShape shape,
-        JsonContractConstraints constraints,
-        bool isNullable)
-    {
-        JsonElement[] values = allowedValues.ToArray();
-        foreach (JsonElement value in values)
-        {
-            RegisterAgainstShape(
-                contractId,
-                targetType,
-                jsonPropertyName,
-                value,
-                shape,
-                constraints,
-                isNullable,
-                JsonContractMetadataKind.EnumValue);
-        }
-
-        Array.Sort(values, JsonElementUtility.CompareCanonical);
-        var unique = new List<JsonElement>(values.Length);
-        foreach (JsonElement value in values)
-        {
-            if (unique.Count == 0
-                || JsonElementUtility.CompareCanonical(
-                    unique[unique.Count - 1],
-                    value) != 0)
-            {
-                unique.Add(value);
-            }
-        }
-
-        return unique.ToArray();
-    }
-
     internal void RegisterAgainstShape (
         string contractId,
         Type targetType,
@@ -60,8 +19,7 @@ internal sealed class JsonContractValueValidator
         JsonElement value,
         ContractNodeShape shape,
         JsonContractConstraints constraints,
-        bool isNullable,
-        JsonContractMetadataKind metadataKind)
+        bool isNullable)
     {
         if (value.ValueKind == JsonValueKind.Undefined)
         {
@@ -69,7 +27,6 @@ internal sealed class JsonContractValueValidator
                 contractId,
                 targetType,
                 jsonPropertyName,
-                metadataKind,
                 "A contract value cannot be undefined.");
         }
 
@@ -84,7 +41,6 @@ internal sealed class JsonContractValueValidator
                 contractId,
                 targetType,
                 jsonPropertyName,
-                metadataKind,
                 "A non-nullable contract cannot declare the null value.");
         }
 
@@ -95,8 +51,7 @@ internal sealed class JsonContractValueValidator
                 jsonPropertyName,
                 value,
                 shape,
-                constraints,
-                metadataKind));
+                constraints));
     }
 
     internal void ValidateAll (
@@ -119,7 +74,6 @@ internal sealed class JsonContractValueValidator
                     pending.ContractId,
                     pending.TargetType,
                     pending.JsonPropertyName,
-                    pending.MetadataKind,
                     "A declared JSON value is incompatible with the serializer-derived contract shape.");
             }
         }
@@ -130,47 +84,6 @@ internal sealed class JsonContractValueValidator
         JsonElement value)
     {
         return ContractValueAcceptanceEvaluator.Accepts(node, value);
-    }
-
-    internal static JsonContractScalarKind? GetCommonScalarKind (
-        IReadOnlyList<JsonElement> values)
-    {
-        JsonContractScalarKind? result = null;
-        bool hasNonNullValue = false;
-        foreach (JsonElement value in values)
-        {
-            if (value.ValueKind == JsonValueKind.Null)
-            {
-                continue;
-            }
-
-            hasNonNullValue = true;
-            JsonContractScalarKind? current = GetScalarKind(value);
-            if (!current.HasValue)
-            {
-                return null;
-            }
-
-            if (result.HasValue && result.Value != current.Value)
-            {
-                if ((result.Value is JsonContractScalarKind.Integer
-                        or JsonContractScalarKind.Number)
-                    && (current.Value is JsonContractScalarKind.Integer
-                        or JsonContractScalarKind.Number))
-                {
-                    result = JsonContractScalarKind.Number;
-                    continue;
-                }
-
-                return null;
-            }
-
-            result = current;
-        }
-
-        return hasNonNullValue
-            ? result
-            : JsonContractScalarKind.Null;
     }
 
     internal static JsonContractScalarKind? GetScalarKind (JsonElement value)
@@ -186,8 +99,7 @@ internal sealed class JsonContractValueValidator
             string? jsonPropertyName,
             JsonElement value,
             ContractNodeShape shape,
-            JsonContractConstraints constraints,
-            JsonContractMetadataKind metadataKind)
+            JsonContractConstraints constraints)
         {
             ContractId = contractId;
             TargetType = targetType;
@@ -195,7 +107,6 @@ internal sealed class JsonContractValueValidator
             Value = value.Clone();
             Shape = shape;
             Constraints = constraints;
-            MetadataKind = metadataKind;
         }
 
         internal string ContractId { get; }
@@ -210,6 +121,5 @@ internal sealed class JsonContractValueValidator
 
         internal JsonContractConstraints Constraints { get; }
 
-        internal JsonContractMetadataKind MetadataKind { get; }
     }
 }

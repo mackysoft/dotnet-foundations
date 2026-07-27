@@ -12,34 +12,56 @@ public sealed class TypeMapperIsolationTests
 {
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_MapperContextExposesReadOnlySerializerContracts ()
+    public void Generate_MapperContextExposesExactReadOnlySerializerContracts ()
     {
         bool canMapObservedReadOnlyOptions = false;
         bool canMapObservedReadOnlyTypeInfo = false;
         bool mapObservedReadOnlyOptions = false;
         bool mapObservedReadOnlyTypeInfo = false;
+        bool observedTypeContractAuthority = false;
+        JsonTypeInfo? observedTypeInfo = null;
+        JsonTypeInfo? observedDeclaringTypeInfo = null;
+        JsonPropertyInfo? observedPropertyInfo = null;
         JsonSerializerOptions callerOptions = OpaqueSerializerOptions();
         var mapper = new TestTypeMapper(
             "tests.mapper.read-only-context",
             context =>
             {
-                if (context.TargetType != typeof(OpaqueValue))
+                if (context.TypeInfo.Type == typeof(OpaqueContract))
+                {
+                    Assert.Same(
+                        context.TypeInfo,
+                        context.DeclaringTypeInfo);
+                    Assert.Null(context.PropertyInfo);
+                    observedTypeContractAuthority = true;
+                    return false;
+                }
+
+                if (context.TypeInfo.Type != typeof(OpaqueValue))
                 {
                     return false;
                 }
 
                 canMapObservedReadOnlyOptions =
-                    context.SerializerOptions.IsReadOnly;
+                    context.TypeInfo.Options.IsReadOnly;
                 canMapObservedReadOnlyTypeInfo =
                     context.TypeInfo.IsReadOnly;
+                observedTypeInfo = context.TypeInfo;
+                observedDeclaringTypeInfo = context.DeclaringTypeInfo;
+                observedPropertyInfo = context.PropertyInfo;
                 return true;
             },
             context =>
             {
                 mapObservedReadOnlyOptions =
-                    context.SerializerOptions.IsReadOnly;
+                    context.TypeInfo.Options.IsReadOnly;
                 mapObservedReadOnlyTypeInfo =
                     context.TypeInfo.IsReadOnly;
+                Assert.Same(observedTypeInfo, context.TypeInfo);
+                Assert.Same(
+                    observedDeclaringTypeInfo,
+                    context.DeclaringTypeInfo);
+                Assert.Same(observedPropertyInfo, context.PropertyInfo);
                 return JsonContractTypeMapping.Scalar(
                     JsonContractScalarKind.String);
             });
@@ -53,7 +75,23 @@ public sealed class TypeMapperIsolationTests
         Assert.True(canMapObservedReadOnlyTypeInfo);
         Assert.True(mapObservedReadOnlyOptions);
         Assert.True(mapObservedReadOnlyTypeInfo);
-        Assert.False(callerOptions.IsReadOnly);
+        Assert.True(observedTypeContractAuthority);
+        Assert.True(callerOptions.IsReadOnly);
+        Assert.Same(
+            callerOptions.GetTypeInfo(typeof(OpaqueValue)),
+            observedTypeInfo);
+        JsonTypeInfo declaringTypeInfo =
+            callerOptions.GetTypeInfo(typeof(OpaqueContract));
+        Assert.Same(
+            declaringTypeInfo,
+            observedDeclaringTypeInfo);
+        Assert.True(observedDeclaringTypeInfo!.IsReadOnly);
+        Assert.Same(
+            Assert.Single(declaringTypeInfo.Properties),
+            observedPropertyInfo);
+        Assert.Equal("Value", observedPropertyInfo!.Name);
+        Assert.Throws<InvalidOperationException>(
+            () => observedPropertyInfo.Name = "tampered");
     }
 
     [Fact]
@@ -66,12 +104,12 @@ public sealed class TypeMapperIsolationTests
             MapperId,
             context =>
             {
-                if (context.TargetType != typeof(OpaqueValue))
+                if (context.TypeInfo.Type != typeof(OpaqueValue))
                 {
                     return false;
                 }
 
-                context.SerializerOptions.PropertyNameCaseInsensitive = true;
+                context.TypeInfo.Options.PropertyNameCaseInsensitive = true;
                 return true;
             },
             static _ => JsonContractTypeMapping.Scalar(
@@ -91,7 +129,7 @@ public sealed class TypeMapperIsolationTests
         Assert.Equal("Value", exception.JsonPropertyName);
         Assert.Equal(new[] { MapperId }, exception.SourceIds);
         Assert.False(callerOptions.PropertyNameCaseInsensitive);
-        Assert.False(callerOptions.IsReadOnly);
+        Assert.True(callerOptions.IsReadOnly);
     }
 
     [Fact]
@@ -102,7 +140,8 @@ public sealed class TypeMapperIsolationTests
         JsonSerializerOptions callerOptions = OpaqueSerializerOptions();
         var mapper = new TestTypeMapper(
             MapperId,
-            static context => context.TargetType == typeof(OpaqueValue),
+            static context =>
+                context.TypeInfo.Type == typeof(OpaqueValue),
             context =>
             {
                 context.TypeInfo.NumberHandling =
@@ -124,7 +163,7 @@ public sealed class TypeMapperIsolationTests
         Assert.Equal(typeof(OpaqueValue), exception.TargetType);
         Assert.Equal("Value", exception.JsonPropertyName);
         Assert.Equal(new[] { MapperId }, exception.SourceIds);
-        Assert.False(callerOptions.IsReadOnly);
+        Assert.True(callerOptions.IsReadOnly);
     }
 
     [Fact]
@@ -141,7 +180,7 @@ public sealed class TypeMapperIsolationTests
             "tests.mapper.nested-contract-mutation",
             context =>
             {
-                if (context.TargetType != typeof(NestedContract))
+                if (context.TypeInfo.Type != typeof(NestedContract))
                 {
                     return false;
                 }
@@ -186,7 +225,7 @@ public sealed class TypeMapperIsolationTests
             Assert.Single(
                 callerOptions.GetTypeInfo(
                     typeof(NestedContract)).Properties).Name);
-        Assert.False(callerOptions.IsReadOnly);
+        Assert.True(callerOptions.IsReadOnly);
     }
 
     private static JsonSerializerOptions OpaqueSerializerOptions ()

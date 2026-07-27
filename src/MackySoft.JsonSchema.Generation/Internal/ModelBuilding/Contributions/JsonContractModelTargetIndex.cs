@@ -174,13 +174,10 @@ internal sealed class JsonContractModelTargetIndex
                 node.Source.TargetType,
                 jsonPropertyName);
             variantTargets.Add(variant, variantTarget);
-            if (variant.Value is not null)
-            {
-                AddNodeTarget(
-                    $"{variantPointer}/value",
-                    variant.Value,
-                    jsonPropertyName);
-            }
+            AddNodeTarget(
+                $"{variantPointer}/value",
+                variant.Value,
+                jsonPropertyName);
         }
 
         return nodeTarget;

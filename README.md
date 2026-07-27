@@ -10,7 +10,7 @@ This repository owns product-independent .NET foundations shared by MackySoft pr
 | --- | --- | --- | --- |
 | `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.1.0` | Guarded lexical path values using current-platform identity rules. |
 | `json-canonicalization` | [`MackySoft.Json.Canonicalization`](src/MackySoft.Json.Canonicalization/README.md) | `0.1.0` | RFC 8785 canonical UTF-8 JSON generation. |
-| `json-schema-generation` | [`MackySoft.JsonSchema.Generation`](src/MackySoft.JsonSchema.Generation/README.md) | `0.2.0` | Deterministic JSON contract modeling, JSON Schema generation, and type-metadata projection. |
+| `json-schema-generation` | [`MackySoft.JsonSchema.Generation`](src/MackySoft.JsonSchema.Generation/README.md) | `0.3.0` | Deterministic JSON contract modeling, JSON Schema generation, and type-metadata projection. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies`](src/MackySoft.Text.Vocabularies/README.md) | `0.1.0` | Finite typed vocabularies with exact canonical text mappings. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies.Json`](src/MackySoft.Text.Vocabularies.Json/README.md) | `0.1.0` | `System.Text.Json` string value and property-name adapters. |
 
@@ -30,9 +30,9 @@ The package does not define hash or digest APIs, product-specific projections or
 
 ## JSON Schema generation boundary
 
-`MackySoft.JsonSchema.Generation` builds a read-only JSON contract model from .NET DTOs, shared annotations, `System.Text.Json` type information, and explicitly registered extensions. It deterministically projects the same model to JSON Schema Draft 2020-12 and describe-oriented type metadata. The same authoritative input and settings produce the same normalized model, contract digest, and UTF-8 JSON bytes; ambiguous or conflicting input produces a typed failure.
+`MackySoft.JsonSchema.Generation` builds a read-only JSON contract model from one effective `System.Text.Json` `JsonTypeInfo`, six contract-independent annotations, and explicitly registered typed extensions. It deterministically projects the same model to JSON Schema Draft 2020-12 and describe-oriented type metadata. The same authoritative input and settings produce the same normalized model, contract digest, and UTF-8 JSON bytes; ambiguous or conflicting input produces a typed failure.
 
-Closed contractual enum-to-string literals use `MackySoft.Text.Vocabularies`; the JSON adapter is not part of this package's dependency boundary. Public extension points are limited to metadata providers, type mappers, model contributors, and document post-processors that add delivery-specific vendor extensions. The package does not own product-specific concepts, schema placement, manifests, CLI behavior, operation execution semantics, or unrestricted document post-processing.
+Closed contractual enum-to-string literals use `MackySoft.Text.Vocabularies`; the JSON adapter is not part of this package's dependency boundary. Public extension points are limited to typed metadata providers, typed consumer-attribute interpreters, type mappers, model contributors, and document post-processors that add delivery-specific vendor extensions. The package does not own product-specific concepts, schema placement, manifests, CLI behavior, operation execution semantics, or unrestricted document post-processing.
 
 ## Text vocabulary boundary
 
@@ -93,12 +93,12 @@ To pack and verify the JSON Schema generation family:
 ```bash
 bash scripts/pack-package-family.sh \
   --family json-schema-generation \
-  --version 0.2.0 \
+  --version 0.3.0 \
   --output artifacts/packages/json-schema-generation
 
 bash scripts/verify-package-family.sh \
   --family json-schema-generation \
-  --version 0.2.0 \
+  --version 0.3.0 \
   --package-dir artifacts/packages/json-schema-generation
 ```
 

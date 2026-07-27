@@ -4,7 +4,6 @@ using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
 using MackySoft.JsonSchema.Generation.Extensibility;
-using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
 namespace MackySoft.JsonSchema.Generation.Tests.Extensibility;
@@ -33,7 +32,7 @@ public sealed class ContractGenerationFailureTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Generate_WhenMetadataSourcesDisagree_ReportsBothSourcesAndMetadataKind ()
+    public void Generate_WhenMetadataSourcesDisagree_ReportsBothSources ()
     {
         var alpha = DescriptionProvider(
             "tests.metadata.alpha",
@@ -41,12 +40,15 @@ public sealed class ContractGenerationFailureTests
         var beta = DescriptionProvider(
             "tests.metadata.beta",
             "Beta description.");
+        var registry = new JsonContractMetadataRegistry()
+            .RegisterProvider(beta)
+            .RegisterProvider(alpha);
 
         JsonContractGenerationException exception =
             Assert.Throws<JsonContractGenerationException>(
                 () => GenerationTestHarness.Generate<MetadataContract>(
                     "tests.metadata-conflict",
-                    metadataProviders: new[] { beta, alpha }));
+                    metadataRegistry: registry));
 
         Assert.Equal(
             JsonContractGenerationFailureKind.ConflictingMetadata,
@@ -54,7 +56,6 @@ public sealed class ContractGenerationFailureTests
         Assert.Equal("tests.metadata-conflict", exception.ContractId);
         Assert.Equal(typeof(string), exception.TargetType);
         Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Description, exception.MetadataKind);
         Assert.Equal(
             new[] { "tests.metadata.alpha", "tests.metadata.beta" },
             exception.SourceIds);
@@ -70,12 +71,15 @@ public sealed class ContractGenerationFailureTests
         var second = DescriptionProvider(
             "tests.metadata.duplicate",
             "Second description.");
+        var registry = new JsonContractMetadataRegistry()
+            .RegisterProvider(first)
+            .RegisterProvider(second);
 
         JsonContractGenerationException exception =
             Assert.Throws<JsonContractGenerationException>(
                 () => new JsonContractGeneratorOptions(
                     JsonContractGenerationSettings.ClosedObjects,
-                    metadataProviders: new[] { first, second }));
+                    metadataRegistry: registry));
 
         Assert.Equal(
             JsonContractGenerationFailureKind.DuplicateExtensionId,
@@ -110,26 +114,30 @@ public sealed class ContractGenerationFailureTests
             exception.SourceIds);
     }
 
-    private static TestMetadataProvider DescriptionProvider (
+    private static TestMetadataProvider<string> DescriptionProvider (
         string stableId,
         string description)
     {
-        return new TestMetadataProvider(
+        return new TestMetadataProvider<string>(
             stableId,
-            context =>
-                string.Equals(
-                    context.JsonPropertyName,
+            (context, builder) =>
+            {
+                if (string.Equals(
+                    context.PropertyInfo?.Name,
                     "Value",
-                    StringComparison.Ordinal)
-                    ? new[] { JsonContractMetadata.Description(description) }
-                    : Array.Empty<JsonContractMetadata>());
+                    StringComparison.Ordinal))
+                {
+                    builder.SetDescription(description);
+                }
+            });
     }
 
     private static TestTypeMapper OpaqueMapper (string stableId)
     {
         return new TestTypeMapper(
             stableId,
-            static context => context.TargetType == typeof(OpaqueValue),
+            static context =>
+                context.TypeInfo.Type == typeof(OpaqueValue),
             static _ => JsonContractTypeMapping.Scalar(
                 JsonContractScalarKind.String));
     }

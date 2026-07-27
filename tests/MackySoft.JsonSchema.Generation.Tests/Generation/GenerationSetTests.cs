@@ -77,15 +77,16 @@ public sealed class GenerationSetTests
     private static JsonContractGenerationRequest CreateRequest<TContract> (
         string contractId)
     {
+        var serializerOptions = new JsonSerializerOptions
+        {
+            UnmappedMemberHandling =
+                JsonUnmappedMemberHandling.Disallow,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver(),
+        };
+        serializerOptions.MakeReadOnly();
         return new JsonContractGenerationRequest(
             contractId,
-            typeof(TContract),
-            new JsonSerializerOptions
-            {
-                UnmappedMemberHandling =
-                    JsonUnmappedMemberHandling.Disallow,
-            },
-            new DefaultJsonTypeInfoResolver(),
+            serializerOptions.GetTypeInfo(typeof(TContract)),
             new JsonSchemaDocumentOptions(
                 JsonSchemaDocumentKind.Complete,
                 id: null,

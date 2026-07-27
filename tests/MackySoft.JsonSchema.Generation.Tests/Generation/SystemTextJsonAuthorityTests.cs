@@ -1,12 +1,9 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
-using MackySoft.JsonSchema.Generation.Annotations;
 using MackySoft.JsonSchema.Generation.Configuration;
 using MackySoft.JsonSchema.Generation.ContractModel;
 using MackySoft.JsonSchema.Generation.Diagnostics;
-using MackySoft.JsonSchema.Generation.Extensibility;
-using MackySoft.JsonSchema.Generation.Metadata;
 using MackySoft.JsonSchema.Generation.Projection;
 using MackySoft.JsonSchema.Generation.Tests.Fixtures;
 
@@ -19,13 +16,6 @@ public sealed class SystemTextJsonAuthorityTests
 
     private const string GuidPattern =
         "^[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}$";
-
-    public static TheoryData<Type, Type> InvalidLexicalConstantContracts =>
-        new()
-        {
-            { typeof(InvalidCharacterConstantContract), typeof(char) },
-            { typeof(InvalidGuidConstantContract), typeof(Guid) },
-        };
 
     public static TheoryData<Type, Type> UnsupportedLexicalContracts =>
         new()
@@ -433,117 +423,6 @@ public sealed class SystemTextJsonAuthorityTests
         Assert.Equal("Value", exception.JsonPropertyName);
     }
 
-    [Theory]
-    [MemberData(nameof(InvalidLexicalConstantContracts))]
-    public void Generate_WhenLexicalConstantIsNotRoundTrippedBySerializer_ReportsInvalidMetadata (
-        Type contractType,
-        Type scalarType)
-    {
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => Generate(contractType, ClosedSerializerOptions()));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.InvalidMetadataValue,
-            exception.FailureKind);
-        Assert.Equal(scalarType, exception.TargetType);
-        Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Const, exception.MetadataKind);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenMappedBuiltInLexicalConstantDoesNotRoundTrip_ReportsInvalidMetadata ()
-    {
-        var mapper = new TestTypeMapper(
-            "tests.mapper.date-time",
-            static context => context.TargetType == typeof(DateTime),
-            static _ => JsonContractTypeMapping.Scalar(
-                JsonContractScalarKind.String));
-
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => GenerationTestHarness.Generate<
-                    InvalidDateTimeConstantContract>(
-                        "tests.mapped-invalid-date-time",
-                        typeMappers: new[] { mapper }));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.InvalidMetadataValue,
-            exception.FailureKind);
-        Assert.Equal(typeof(DateTime), exception.TargetType);
-        Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Const, exception.MetadataKind);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenLexicalConstantRoundTripsThroughSerializer_AcceptsIt ()
-    {
-        JsonContractGenerationResult result =
-            GenerationTestHarness.Generate<ValidGuidConstantContract>(
-                "tests.valid-guid-constant");
-
-        JsonContractNode value = GenerationTestHarness
-            .GetProperty(result.Model.Root, "Value")
-            .Value;
-        Assert.Equal(JsonContractNodeKind.Const, value.Kind);
-        Assert.Equal(
-            "00000000-0000-0000-0000-000000000000",
-            value.Constant?.GetString());
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenAnyValueOverwritesKnownScalar_ReportsMetadataConflict ()
-    {
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => GenerationTestHarness.Generate<
-                    ArbitraryScalarContract>(
-                        "tests.arbitrary-known-scalar"));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.ConflictingMetadata,
-            exception.FailureKind);
-        Assert.Equal(typeof(int), exception.TargetType);
-        Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Arbitrary, exception.MetadataKind);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenAnyValueOverwritesKnownObject_ReportsMetadataConflict ()
-    {
-        JsonContractGenerationException exception =
-            Assert.Throws<JsonContractGenerationException>(
-                () => GenerationTestHarness.Generate<
-                    ArbitraryObjectContract>(
-                        "tests.arbitrary-known-object"));
-
-        Assert.Equal(
-            JsonContractGenerationFailureKind.ConflictingMetadata,
-            exception.FailureKind);
-        Assert.Equal(typeof(KnownObject), exception.TargetType);
-        Assert.Equal("Value", exception.JsonPropertyName);
-        Assert.Equal(JsonContractMetadataKind.Arbitrary, exception.MetadataKind);
-    }
-
-    [Fact]
-    [Trait("Size", "Small")]
-    public void Generate_WhenAnyValueDeclaresUnknownConverter_UsesArbitraryShape ()
-    {
-        JsonContractGenerationResult result =
-            GenerationTestHarness.Generate<ArbitraryUnknownConverterContract>(
-                "tests.arbitrary-unknown-converter");
-
-        JsonContractNode value = GenerationTestHarness
-            .GetProperty(result.Model.Root, "Value")
-            .Value;
-        Assert.Equal(JsonContractNodeKind.Arbitrary, value.Kind);
-        Assert.True(value.IsNullable);
-    }
-
     private static JsonSerializerOptions ClosedSerializerOptions ()
     {
         return new JsonSerializerOptions
@@ -556,18 +435,16 @@ public sealed class SystemTextJsonAuthorityTests
         Type contractType,
         JsonSerializerOptions serializerOptions)
     {
-        IJsonTypeInfoResolver resolver =
-            serializerOptions.TypeInfoResolver
-            ?? new DefaultJsonTypeInfoResolver();
+        serializerOptions.TypeInfoResolver ??=
+            new DefaultJsonTypeInfoResolver();
+        serializerOptions.MakeReadOnly();
         var generator = new JsonContractGenerator(
             new JsonContractGeneratorOptions(
                 JsonContractGenerationSettings.ClosedObjects));
         return generator.Generate(
             new JsonContractGenerationRequest(
                 "tests.invalid-lexical-constant",
-                contractType,
-                serializerOptions,
-                resolver,
+                serializerOptions.GetTypeInfo(contractType),
                 new JsonSchemaDocumentOptions(
                     JsonSchemaDocumentKind.Complete,
                     id: null,
@@ -692,73 +569,4 @@ public sealed class SystemTextJsonAuthorityTests
         public TimeOnly Value { get; set; }
     }
 
-    private sealed class InvalidCharacterConstantContract
-    {
-        [Const("\"ab\"")]
-        public char Value { get; set; }
-    }
-
-    private sealed class InvalidGuidConstantContract
-    {
-        [Const("\"not-a-guid\"")]
-        public Guid Value { get; set; }
-    }
-
-    private sealed class InvalidDateTimeConstantContract
-    {
-        [Const("\"not-a-date-time\"")]
-        public DateTime Value { get; set; }
-    }
-
-    private sealed class ValidGuidConstantContract
-    {
-        [Const("\"00000000-0000-0000-0000-000000000000\"")]
-        public Guid Value { get; set; }
-    }
-
-    private sealed class ArbitraryScalarContract
-    {
-        [AnyValue]
-        public int Value { get; set; }
-    }
-
-    private sealed class ArbitraryObjectContract
-    {
-        [AnyValue]
-        public KnownObject Value { get; set; } = new();
-    }
-
-    private sealed class KnownObject
-    {
-        public int Count { get; set; }
-    }
-
-    private sealed class ArbitraryUnknownConverterContract
-    {
-        [AnyValue]
-        [JsonConverter(typeof(UnknownValueConverter))]
-        public UnknownValue Value { get; set; }
-    }
-
-    private readonly record struct UnknownValue (string Text);
-
-    private sealed class UnknownValueConverter : JsonConverter<UnknownValue>
-    {
-        public override UnknownValue Read (
-            ref Utf8JsonReader reader,
-            Type typeToConvert,
-            JsonSerializerOptions options)
-        {
-            using JsonDocument document = JsonDocument.ParseValue(ref reader);
-            return new UnknownValue(document.RootElement.GetRawText());
-        }
-
-        public override void Write (
-            Utf8JsonWriter writer,
-            UnknownValue value,
-            JsonSerializerOptions options)
-        {
-            writer.WriteStringValue(value.Text);
-        }
-    }
 }
