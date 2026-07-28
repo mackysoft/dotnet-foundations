@@ -84,6 +84,12 @@ attributes:
 - `ItemCountAttribute`
 - `PropertyCountAttribute`
 
+`PatternAttribute` and the typed metadata builder accept the portable
+`$(?![\s\S])` suffix when the pattern must match the actual end of the input.
+A trailing `$` alone also matches immediately before a final line terminator
+under ECMAScript semantics. Other lookaround forms remain outside the supported
+interoperable subset.
+
 They describe facts that are not already present in the effective serializer
 contract. Generation validates each constraint against the completed target
 shape: string constraints require a string, item counts require an array, and
