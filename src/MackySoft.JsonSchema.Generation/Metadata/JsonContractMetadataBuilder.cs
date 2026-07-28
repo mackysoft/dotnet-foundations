@@ -61,7 +61,10 @@ public sealed class JsonContractMetadataBuilder<TValue>
     /// <summary>
     /// Declares a JSON Schema pattern from the supported ECMA-262 subset.
     /// </summary>
-    /// <param name="pattern"> Non-null pattern text. </param>
+    /// <param name="pattern">
+    /// Non-null pattern text. Use <c>$(?![\s\S])</c> instead of a trailing
+    /// <c>$</c> when a final line terminator must not satisfy the end assertion.
+    /// </param>
     /// <exception cref="ArgumentNullException"> <paramref name="pattern" /> is <see langword="null" />. </exception>
     /// <exception cref="InvalidOperationException"> The callback that owns this builder has completed. </exception>
     public void SetPattern (string pattern)

@@ -10,6 +10,7 @@ namespace MackySoft.JsonSchema.Generation.Internal.Metadata.Validation;
 /// </summary>
 internal static class JsonSchemaPatternContract
 {
+    private const string StrictEndOfInputAssertion = "(?![\\s\\S])";
     private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
     internal static void Validate (string pattern)
@@ -46,6 +47,16 @@ internal static class JsonSchemaPatternContract
                 if (index + 1 < pattern.Length
                     && pattern[index + 1] == '?')
                 {
+                    if (index > 0
+                        && pattern[index - 1] == '$'
+                        && HasStrictEndOfInputAssertion(pattern, index))
+                    {
+                        index += StrictEndOfInputAssertion.Length - 1;
+                        canQuantify = false;
+                        canMakeLazy = false;
+                        continue;
+                    }
+
                     throw UnsupportedToken(pattern, index);
                 }
 
@@ -132,6 +143,19 @@ internal static class JsonSchemaPatternContract
             pattern,
             RegexOptions.ECMAScript,
             RegexTimeout);
+    }
+
+    private static bool HasStrictEndOfInputAssertion (
+        string pattern,
+        int index)
+    {
+        return index + StrictEndOfInputAssertion.Length == pattern.Length
+            && string.CompareOrdinal(
+                pattern,
+                index,
+                StrictEndOfInputAssertion,
+                0,
+                StrictEndOfInputAssertion.Length) == 0;
     }
 
     private static int ValidateCharacterClass (

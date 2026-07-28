@@ -12,11 +12,11 @@ placement, manifests, operation execution, or product validation policy.
 Pin the independently versioned package family:
 
 ```bash
-dotnet add package MackySoft.JsonSchema.Generation --version "[0.3.0]"
+dotnet add package MackySoft.JsonSchema.Generation --version "[0.3.1]"
 ```
 
 ```xml
-<PackageReference Include="MackySoft.JsonSchema.Generation" Version="[0.3.0]" />
+<PackageReference Include="MackySoft.JsonSchema.Generation" Version="[0.3.1]" />
 ```
 
 ## Generate a contract
@@ -74,7 +74,7 @@ authoritative serializer contract.
 
 ## Built-in attributes
 
-Version 0.3.0 exposes exactly these built-in annotation and constraint
+Version 0.3.1 exposes exactly these built-in annotation and constraint
 attributes:
 
 - `TitleAttribute`
@@ -83,6 +83,12 @@ attributes:
 - `LengthAttribute`
 - `ItemCountAttribute`
 - `PropertyCountAttribute`
+
+`PatternAttribute` and the typed metadata builder accept the portable
+`$(?![\s\S])` suffix when the pattern must match the actual end of the input.
+A trailing `$` alone also matches immediately before a final line terminator
+under ECMAScript semantics. Other lookaround forms remain outside the supported
+interoperable subset.
 
 They describe facts that are not already present in the effective serializer
 contract. Generation validates each constraint against the completed target
