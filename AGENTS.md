@@ -56,12 +56,12 @@ bash scripts/verify.sh
 
 bash scripts/pack-package-family.sh \
   --family filesystem \
-  --version 0.2.0 \
+  --version 0.2.1 \
   --output artifacts/filesystem
 
 bash scripts/verify-package-family.sh \
   --family filesystem \
-  --version 0.2.0 \
+  --version 0.2.1 \
   --package-dir artifacts/filesystem
 
 bash scripts/pack-package-family.sh \

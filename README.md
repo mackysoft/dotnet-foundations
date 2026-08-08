@@ -8,8 +8,8 @@ This repository owns product-independent .NET foundations shared by MackySoft pr
 
 | Family | Package | Version | Responsibility |
 | --- | --- | --- | --- |
-| `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.2.0` | Guarded lexical path values using current-platform identity rules. |
-| `filesystem` | [`MackySoft.FileSystem.Physical`](src/MackySoft.FileSystem.Physical/README.md) | `0.2.0` | Physical entry observation, link-policy path resolution, and complete single-file publication. |
+| `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.2.1` | Guarded lexical path values using current-platform identity rules. |
+| `filesystem` | [`MackySoft.FileSystem.Physical`](src/MackySoft.FileSystem.Physical/README.md) | `0.2.1` | Physical entry observation, link-policy path resolution, and complete single-file publication. |
 | `json-canonicalization` | [`MackySoft.Json.Canonicalization`](src/MackySoft.Json.Canonicalization/README.md) | `0.1.0` | RFC 8785 canonical UTF-8 JSON generation. |
 | `json-schema-generation` | [`MackySoft.JsonSchema.Generation`](src/MackySoft.JsonSchema.Generation/README.md) | `0.3.1` | Deterministic JSON contract modeling, JSON Schema generation, and type-metadata projection. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies`](src/MackySoft.Text.Vocabularies/README.md) | `0.1.0` | Finite typed vocabularies with exact canonical text mappings. |
@@ -60,12 +60,12 @@ Pack and verify one package family:
 ```bash
 bash scripts/pack-package-family.sh \
   --family filesystem \
-  --version 0.2.0 \
+  --version 0.2.1 \
   --output artifacts/filesystem
 
 bash scripts/verify-package-family.sh \
   --family filesystem \
-  --version 0.2.0 \
+  --version 0.2.1 \
   --package-dir artifacts/filesystem
 
 bash scripts/pack-package-family.sh \
