@@ -231,12 +231,34 @@ public sealed class ContainedPath : IEquatable<ContainedPath>
         return true;
     }
 
+    /// <summary>
+    /// Determines whether this containment relation and <paramref name="candidate" /> have the same boundary root
+    /// and target under current-platform lexical identity rules.
+    /// </summary>
+    /// <param name="candidate"> The guarded containment relation to compare with this relation. </param>
+    /// <returns>
+    /// <see langword="true" /> when both boundary roots are the same and both targets are the same;
+    /// otherwise <see langword="false" />.
+    /// </returns>
+    /// <remarks>
+    /// <see cref="RelativePath" /> is derived from the boundary and target identities and is not compared
+    /// independently. This comparison does not access the filesystem or inspect the actual volume's case sensitivity.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"> <paramref name="candidate" /> is <see langword="null" />. </exception>
+    public bool HasSameBoundaryAndTargetAs (ContainedPath candidate)
+    {
+        if (candidate is null)
+        {
+            throw new ArgumentNullException(nameof(candidate));
+        }
+        return boundaryRoot.IsSameAs(candidate.boundaryRoot)
+            && target.IsSameAs(candidate.target);
+    }
+
     /// <inheritdoc />
     public bool Equals (ContainedPath? other)
     {
-        return other is not null
-            && boundaryRoot.Equals(other.boundaryRoot)
-            && target.Equals(other.target);
+        return other is not null && HasSameBoundaryAndTargetAs(other);
     }
 
     /// <inheritdoc />

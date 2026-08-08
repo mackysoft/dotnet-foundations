@@ -152,11 +152,33 @@ public sealed class RootRelativePath : IEquatable<RootRelativePath>
         return PlatformPath.ToPlatformSeparators(Value);
     }
 
+    /// <summary>
+    /// Determines whether this root-relative path and <paramref name="candidate" /> identify the same position
+    /// relative to an unspecified boundary under current-platform lexical identity rules.
+    /// </summary>
+    /// <param name="candidate"> The guarded root-relative path to compare with this path. </param>
+    /// <returns>
+    /// <see langword="true" /> when both paths have the same current-platform lexical identity;
+    /// otherwise <see langword="false" />.
+    /// </returns>
+    /// <remarks>
+    /// This comparison uses canonical separators and current-platform case identity. It does not access the
+    /// filesystem or inspect the actual volume's case sensitivity.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"> <paramref name="candidate" /> is <see langword="null" />. </exception>
+    public bool IsSameAs (RootRelativePath candidate)
+    {
+        if (candidate is null)
+        {
+            throw new ArgumentNullException(nameof(candidate));
+        }
+        return PlatformPath.IdentityComparer.Equals(value, candidate.value);
+    }
+
     /// <inheritdoc />
     public bool Equals (RootRelativePath? other)
     {
-        return other is not null
-            && PlatformPath.IdentityComparer.Equals(value, other.value);
+        return other is not null && IsSameAs(other);
     }
 
     /// <inheritdoc />
