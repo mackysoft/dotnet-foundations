@@ -8,19 +8,24 @@ This repository owns product-independent .NET foundations shared by MackySoft pr
 
 | Family | Package | Version | Responsibility |
 | --- | --- | --- | --- |
-| `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.1.0` | Guarded lexical path values using current-platform identity rules. |
+| `filesystem` | [`MackySoft.FileSystem`](src/MackySoft.FileSystem/README.md) | `0.2.0` | Guarded lexical path values using current-platform identity rules. |
+| `filesystem` | [`MackySoft.FileSystem.Physical`](src/MackySoft.FileSystem.Physical/README.md) | `0.2.0` | Physical entry observation, link-policy path resolution, and complete single-file publication. |
 | `json-canonicalization` | [`MackySoft.Json.Canonicalization`](src/MackySoft.Json.Canonicalization/README.md) | `0.1.0` | RFC 8785 canonical UTF-8 JSON generation. |
 | `json-schema-generation` | [`MackySoft.JsonSchema.Generation`](src/MackySoft.JsonSchema.Generation/README.md) | `0.3.1` | Deterministic JSON contract modeling, JSON Schema generation, and type-metadata projection. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies`](src/MackySoft.Text.Vocabularies/README.md) | `0.1.0` | Finite typed vocabularies with exact canonical text mappings. |
 | `text-vocabularies` | [`MackySoft.Text.Vocabularies.Json`](src/MackySoft.Text.Vocabularies.Json/README.md) | `0.1.0` | `System.Text.Json` string value and property-name adapters. |
 
-The `text-vocabularies` packages are released together at the same version. The `filesystem`, `json-canonicalization`, and `json-schema-generation` families are versioned and released independently.
+The packages in the `filesystem` and `text-vocabularies` families are released together at the same version. The `json-canonicalization` and `json-schema-generation` families are versioned and released independently.
 
 ## Filesystem boundary
 
 `MackySoft.FileSystem` validates raw path text once at a factory boundary, then carries normalized absolute paths, root-relative paths, and proven lexical containment through immutable guarded values. Separator, root, fully-qualified, casing, equality, and containment behavior follow the operating system running the process.
 
 The package does not access the filesystem or guarantee existence, node kind, permissions, symbolic-link behavior, physical containment, or the case sensitivity of a mounted volume. It contains no file I/O, locking, access-control, repository layout, cache, transport, or product-specific path policy.
+
+`MackySoft.FileSystem.Physical` consumes those guarded values at an operating-system boundary. It classifies current entry state without following the final link, resolves a `ContainedPath` with explicit link and missing-tail policies, verifies link-resolved containment using current-platform lexical identity rules, and publishes one complete file through a same-directory temporary sibling.
+
+Physical observations and resolutions are snapshots rather than persistent proofs. The package reports directly detected resolved-path or required-entry changes but does not reserve path segments, inspect per-volume case-sensitivity overrides, guarantee provider-independent atomic visibility, define product storage layouts or required files, preserve access-control metadata, coordinate multi-file transactions, or provide a general-purpose filesystem interface.
 
 ## JSON canonicalization boundary
 
@@ -55,12 +60,12 @@ Pack and verify one package family:
 ```bash
 bash scripts/pack-package-family.sh \
   --family filesystem \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --output artifacts/filesystem
 
 bash scripts/verify-package-family.sh \
   --family filesystem \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --package-dir artifacts/filesystem
 
 bash scripts/pack-package-family.sh \

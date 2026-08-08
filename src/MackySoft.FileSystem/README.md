@@ -66,3 +66,5 @@ These values do not access the filesystem and do not guarantee:
 Observe any required physical state immediately before the operation that depends on it. When a race must be prevented, rely on an opened handle or the result of the operation itself.
 
 The package intentionally contains no read or write operations, atomic publication, temporary-node cleanup, locking, access-control handling, storage layout, or general-purpose filesystem interface.
+
+Use the `MackySoft.FileSystem.Physical` companion package, released at the same version, when an application needs product-independent entry observation, link-policy resolution, link-resolved containment snapshots, or complete single-file publication through a same-directory move or replacement.

@@ -109,11 +109,24 @@ for package_id in "${package_family_ids[@]}"; do
     "${nuspec_entry}"
     README.md
     LICENSE
-    "lib/netstandard2.1/${package_id}.dll"
   )
-  if [[ "${package_id}" == "MackySoft.FileSystem" ]]; then
-    required_entries+=("lib/net8.0/${package_id}.dll")
-  fi
+  case "${package_id}" in
+    MackySoft.FileSystem)
+      required_entries+=(
+        "lib/netstandard2.1/${package_id}.dll"
+        "lib/net8.0/${package_id}.dll"
+      )
+      ;;
+    MackySoft.FileSystem.Physical)
+      required_entries+=(
+        "lib/net8.0/${package_id}.dll"
+        "lib/net8.0/${package_id}.xml"
+      )
+      ;;
+    *)
+      required_entries+=("lib/netstandard2.1/${package_id}.dll")
+      ;;
+  esac
   if [[ "${package_id}" == "MackySoft.Json.Canonicalization" ]]; then
     required_entries+=(
       THIRD-PARTY-NOTICES.md
@@ -155,6 +168,22 @@ for package_id in "${package_family_ids[@]}"; do
       if [[ -n "${dependency_ids}" ]]; then
         echo "ERROR: Filesystem package must not declare package dependencies." >&2
         printf '%s\n' "${dependency_ids}" >&2
+        exit 1
+      fi
+      ;;
+    MackySoft.FileSystem.Physical)
+      expected_dependencies="MackySoft.FileSystem"
+      if [[ "${dependency_ids}" != "${expected_dependencies}" ]]; then
+        echo "ERROR: Physical filesystem dependency set is incorrect." >&2
+        printf '%s\n' "${dependency_ids}" >&2
+        exit 1
+      fi
+
+      filesystem_dependency_version="$(
+        read_dependency_version "${nuspec_path}" "MackySoft.FileSystem"
+      )"
+      if [[ "${filesystem_dependency_version}" != "${package_family_version}" ]]; then
+        echo "ERROR: Physical filesystem must depend on MackySoft.FileSystem ${package_family_version}." >&2
         exit 1
       fi
       ;;
@@ -313,19 +342,20 @@ verify_restored_package_provenance() {
 
 case "${package_family_name}" in
   filesystem)
+    core_consumer_dir="${consumer_dir}/core"
     dotnet new classlib \
       --name FileSystemPackageConsumer \
       --framework netstandard2.1 \
-      --output "${consumer_dir}" \
+      --output "${core_consumer_dir}" \
       --no-restore \
       >/dev/null
-    consumer_project_path="${consumer_dir}/FileSystemPackageConsumer.csproj"
+    core_consumer_project_path="${core_consumer_dir}/FileSystemPackageConsumer.csproj"
     PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
       my $version = $ENV{"PACKAGE_VERSION"};
       s{<TargetFramework>netstandard2\.1</TargetFramework>}{<TargetFrameworks>netstandard2.1;net8.0</TargetFrameworks>};
       s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.FileSystem" Version="[$version]" />\n  </ItemGroup>\n</Project>};
-    ' "${consumer_project_path}"
-    cat > "${consumer_dir}/Class1.cs" <<'CS'
+    ' "${core_consumer_project_path}"
+    cat > "${core_consumer_dir}/Class1.cs" <<'CS'
 using MackySoft.FileSystem;
 
 namespace FileSystemPackageConsumer
@@ -341,13 +371,70 @@ namespace FileSystemPackageConsumer
     }
 }
 CS
-    dotnet restore "${consumer_project_path}" \
+
+    physical_consumer_dir="${consumer_dir}/physical"
+    dotnet new console \
+      --name FileSystemPhysicalPackageConsumer \
+      --framework net10.0 \
+      --output "${physical_consumer_dir}" \
+      --no-restore \
+      >/dev/null
+    physical_consumer_project_path="${physical_consumer_dir}/FileSystemPhysicalPackageConsumer.csproj"
+    PACKAGE_VERSION="${package_family_version}" perl -0pi -e '
+      my $version = $ENV{"PACKAGE_VERSION"};
+      s{<TargetFramework>net10\.0</TargetFramework>}{<TargetFramework>net8.0</TargetFramework>};
+      s{</Project>}{  <ItemGroup>\n    <PackageReference Include="MackySoft.FileSystem.Physical" Version="[$version]" />\n  </ItemGroup>\n</Project>};
+    ' "${physical_consumer_project_path}"
+    cat > "${physical_consumer_dir}/Program.cs" <<'CS'
+using System.Text;
+using MackySoft.FileSystem;
+
+string rootText = Path.Combine(
+    Path.GetTempPath(),
+    $"MackySoft.FileSystem.Physical.Consumer.{Guid.NewGuid():N}");
+Directory.CreateDirectory(rootText);
+
+try
+{
+    AbsolutePath root = AbsolutePath.Parse(rootText);
+    ContainedPath target = ContainedPath.Resolve(root, "nested/file.txt");
+    var publication = new AtomicFilePublication(
+        target,
+        SymbolicLinkHandling.Reject,
+        ExistingTargetHandling.Reject,
+        MissingParentHandling.Create);
+    using var contents = new MemoryStream(Encoding.UTF8.GetBytes("complete"));
+    FileSystemOperationResult result = await AtomicFilePublisher.PublishAsync(
+        publication,
+        contents,
+        CancellationToken.None);
+
+    if (!result.IsSuccess || File.ReadAllText(target.Target.Value) != "complete")
+    {
+        throw new InvalidOperationException(
+            $"Package consumer observed an unexpected publication result: {result.Failure}");
+    }
+}
+finally
+{
+    Directory.Delete(rootText, recursive: true);
+}
+CS
+    dotnet restore "${core_consumer_project_path}" \
+      --no-cache \
+      --force-evaluate \
+      --configfile "${nuget_config}"
+    dotnet restore "${physical_consumer_project_path}" \
       --no-cache \
       --force-evaluate \
       --configfile "${nuget_config}"
     verify_restored_package_provenance
     dotnet build \
-      "${consumer_project_path}" \
+      "${core_consumer_project_path}" \
+      --configuration Release \
+      --no-restore
+    dotnet run \
+      --project "${physical_consumer_project_path}" \
       --configuration Release \
       --no-restore
     ;;

@@ -14,9 +14,11 @@ resolve_package_family() {
       package_family_version_property="FileSystemVersion"
       package_family_ids=(
         "MackySoft.FileSystem"
+        "MackySoft.FileSystem.Physical"
       )
       package_family_projects=(
         "src/MackySoft.FileSystem/MackySoft.FileSystem.csproj"
+        "src/MackySoft.FileSystem.Physical/MackySoft.FileSystem.Physical.csproj"
       )
       ;;
     json-canonicalization)
