@@ -17,7 +17,15 @@
 - `MackySoft.FileSystem` owns immutable guarded values for normalized absolute paths, root-relative paths, and lexical containment under the running operating system's path rules.
 - Raw path text is accepted only at factory boundaries. Typed combination and derivation must not return to a raw parser.
 - The package does not own file I/O, mutable physical state, symbolic-link guarantees, locks, access control, storage layouts, transports, or product-specific path policies.
-- `MackySoft.FileSystem` forms the independently versioned `filesystem` release family.
+- `MackySoft.FileSystem` participates in the `filesystem` release family.
+
+## Physical filesystem
+
+- `MackySoft.FileSystem.Physical` owns product-independent entry observation, link-policy path resolution, link-resolved containment snapshots under current-platform lexical identity rules, and complete single-file publication through a same-directory move or replacement.
+- Observations and resolutions describe one point in time. Do not expose them as persistent filesystem proofs or use them to claim protection from later concurrent changes.
+- Do not claim per-volume case identity or provider-independent atomic visibility. Publication relies on the selected filesystem provider's same-directory move or replacement guarantee.
+- Keep product storage layouts, required product files, domain diagnostics, multi-file transactions, locking, access-control policy, and transport behavior outside this package.
+- `MackySoft.FileSystem` and `MackySoft.FileSystem.Physical` are separate packages in the `filesystem` release family. Release both packages together at the same version, and require the physical package to depend on that exact version of the core package.
 
 ## JSON canonicalization
 
@@ -48,12 +56,12 @@ bash scripts/verify.sh
 
 bash scripts/pack-package-family.sh \
   --family filesystem \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --output artifacts/filesystem
 
 bash scripts/verify-package-family.sh \
   --family filesystem \
-  --version 0.1.0 \
+  --version 0.2.0 \
   --package-dir artifacts/filesystem
 
 bash scripts/pack-package-family.sh \

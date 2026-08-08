@@ -1,7 +1,7 @@
 <Project>
 
   <PropertyGroup>
-    <FileSystemVersion Condition="'$(FileSystemVersion)' == ''">0.1.0</FileSystemVersion>
+    <FileSystemVersion Condition="'$(FileSystemVersion)' == ''">0.2.0</FileSystemVersion>
   </PropertyGroup>
 
 </Project>

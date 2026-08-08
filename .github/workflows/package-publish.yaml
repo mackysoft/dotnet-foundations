@@ -59,8 +59,39 @@ jobs:
         id: source
         run: echo "release_sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
 
-  publish:
+  verify-source:
     needs: prepare-release
+    name: verify source (${{ matrix.os_name }})
+    runs-on: ${{ matrix.runs_on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os_name: linux
+            runs_on: ubuntu-latest
+          - os_name: macos
+            runs_on: macos-latest
+          - os_name: windows
+            runs_on: windows-latest
+
+    steps:
+      - name: Checkout pinned release source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Verify source
+        run: bash scripts/verify.sh
+
+  publish:
+    needs:
+      - prepare-release
+      - verify-source
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -95,9 +126,6 @@ jobs:
         uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
-
-      - name: Verify source
-        run: bash scripts/verify.sh
 
       - name: Pack selected package family
         run: >-
