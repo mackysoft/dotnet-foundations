@@ -368,6 +368,19 @@ namespace FileSystemPackageConsumer
             RootRelativePath relativePath = RootRelativePath.Parse(pathText);
             return ContainedPath.Create(root, relativePath);
         }
+
+        public static bool HaveMatchingTypedIdentities (
+            AbsolutePath leftAbsolutePath,
+            AbsolutePath rightAbsolutePath,
+            RootRelativePath leftRelativePath,
+            RootRelativePath rightRelativePath,
+            ContainedPath leftContainedPath,
+            ContainedPath rightContainedPath)
+        {
+            return leftAbsolutePath.IsSameAs(rightAbsolutePath)
+                && leftRelativePath.IsSameAs(rightRelativePath)
+                && leftContainedPath.HasSameBoundaryAndTargetAs(rightContainedPath);
+        }
     }
 }
 CS
@@ -413,6 +426,29 @@ try
     {
         throw new InvalidOperationException(
             $"Package consumer observed an unexpected publication result: {result.Failure}");
+    }
+
+    if (!FileSystemEntryInspector.TryInspect(
+            target.Target,
+            out FileSystemEntryObservation? observation,
+            out FileSystemOperationFailure inspectionFailure)
+        || observation.State != FileSystemEntryState.RegularFile)
+    {
+        throw new InvalidOperationException(
+            $"Package consumer could not observe the published regular file: {inspectionFailure}");
+    }
+
+    if (!PhysicalPathResolver.TryResolve(
+            target,
+            SymbolicLinkHandling.Reject,
+            MissingPathHandling.Reject,
+            out PhysicalPathResolution? resolution,
+            out FileSystemOperationFailure resolutionFailure)
+        || !resolution.RequestedPath.HasSameBoundaryAndTargetAs(target)
+        || resolution.TargetObservation.State != FileSystemEntryState.RegularFile)
+    {
+        throw new InvalidOperationException(
+            $"Package consumer could not resolve the published regular file: {resolutionFailure}");
     }
 }
 finally
