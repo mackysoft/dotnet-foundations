@@ -113,7 +113,18 @@ public sealed class AbsolutePath : IEquatable<AbsolutePath>
         return TryCreate(path, basePath, out result, out failure);
     }
 
-    /// <summary> Determines whether this path and <paramref name="candidate" /> identify the same path. </summary>
+    /// <summary>
+    /// Determines whether this absolute path and <paramref name="candidate" /> identify the same normalized path
+    /// under current-platform lexical identity rules.
+    /// </summary>
+    /// <param name="candidate"> The guarded absolute path to compare with this path. </param>
+    /// <returns>
+    /// <see langword="true" /> when both paths have the same current-platform lexical identity;
+    /// otherwise <see langword="false" />.
+    /// </returns>
+    /// <remarks>
+    /// This comparison does not access the filesystem or inspect the actual volume's case sensitivity.
+    /// </remarks>
     /// <exception cref="ArgumentNullException"> <paramref name="candidate" /> is <see langword="null" />. </exception>
     public bool IsSameAs (AbsolutePath candidate)
     {

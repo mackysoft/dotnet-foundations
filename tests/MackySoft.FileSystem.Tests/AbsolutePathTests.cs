@@ -520,6 +520,9 @@ public sealed class AbsolutePathTests
         var child = AbsolutePath.Parse(Path.Combine(rootText, "child", "file.txt"));
         var sibling = AbsolutePath.Parse(rootText + "-sibling");
 
+        Assert.True(root.IsSameAs(same));
+        Assert.False(root.IsSameAs(sibling));
+        Assert.Throws<ArgumentNullException>(() => root.IsSameAs(null!));
         Assert.Equal(root, same);
         Assert.Equal(root.GetHashCode(), same.GetHashCode());
         Assert.True(root.IsSameOrAncestorOf(child));

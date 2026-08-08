@@ -57,11 +57,15 @@ public sealed class RootRelativePathTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Equality_UsesCanonicalPlatformIdentity ()
+    public void IsSameAs_UsesCanonicalPlatformIdentity ()
     {
         var left = RootRelativePath.Parse("directory/file.txt");
         var right = RootRelativePath.Parse("directory/./file.txt/");
+        var different = RootRelativePath.Parse("directory/other.txt");
 
+        Assert.True(left.IsSameAs(right));
+        Assert.False(left.IsSameAs(different));
+        Assert.Throws<ArgumentNullException>(() => left.IsSameAs(null!));
         Assert.Equal(left, right);
         Assert.Equal(left.GetHashCode(), right.GetHashCode());
     }
@@ -92,6 +96,7 @@ public sealed class RootRelativePathTests
         var descendant = RootRelativePath.Parse("directory/file.txt");
 
         Assert.Equal(@"directory\file.txt", filename.Value);
+        Assert.False(filename.IsSameAs(descendant));
         Assert.NotEqual(filename, descendant);
     }
 
@@ -295,6 +300,7 @@ public sealed class RootRelativePathTests
 
         Assert.Equal("Directory/File.txt", mixedCase.Value);
         Assert.Equal("directory/file.txt", lowerCase.Value);
+        Assert.True(mixedCase.IsSameAs(lowerCase));
         Assert.Equal(mixedCase, lowerCase);
         Assert.Equal(mixedCase.GetHashCode(), lowerCase.GetHashCode());
     }

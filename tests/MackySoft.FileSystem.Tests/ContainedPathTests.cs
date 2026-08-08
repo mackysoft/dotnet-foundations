@@ -393,16 +393,29 @@ public sealed class ContainedPathTests
 
     [Fact]
     [Trait("Size", "Small")]
-    public void Equality_IncludesBoundaryRelationship ()
+    public void HasSameBoundaryAndTargetAs_RequiresBothPathIdentities ()
     {
         var outerRoot = CreateAbsolutePath("contained-equality");
         var innerRoot = AbsolutePath.Parse(Path.Combine(outerRoot.Value, "inner"));
         var target = AbsolutePath.Parse(Path.Combine(innerRoot.Value, "file.txt"));
+        var otherTarget = AbsolutePath.Parse(Path.Combine(innerRoot.Value, "other.txt"));
 
         var fromOuter = ContainedPath.Create(outerRoot, target);
+        var sameBoundaryAndTarget = ContainedPath.Create(
+            AbsolutePath.Parse(outerRoot.Value + Path.DirectorySeparatorChar),
+            AbsolutePath.Parse(Path.Combine(innerRoot.Value, ".", "file.txt")));
         var fromInner = ContainedPath.Create(innerRoot, target);
+        var withOtherTarget = ContainedPath.Create(outerRoot, otherTarget);
 
+        Assert.True(fromOuter.HasSameBoundaryAndTargetAs(sameBoundaryAndTarget));
+        Assert.False(fromOuter.HasSameBoundaryAndTargetAs(fromInner));
+        Assert.False(fromOuter.HasSameBoundaryAndTargetAs(withOtherTarget));
+        Assert.Throws<ArgumentNullException>(
+            () => fromOuter.HasSameBoundaryAndTargetAs(null!));
+        Assert.Equal(fromOuter, sameBoundaryAndTarget);
+        Assert.Equal(fromOuter.GetHashCode(), sameBoundaryAndTarget.GetHashCode());
         Assert.NotEqual(fromOuter, fromInner);
+        Assert.NotEqual(fromOuter, withOtherTarget);
     }
 
     [Fact]
